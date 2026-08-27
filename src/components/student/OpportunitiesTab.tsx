@@ -10,11 +10,8 @@ import {
   X,
   Sparkles,
   ExternalLink,
-  Bell,
   FileText,
   Building2,
-  MapPin,
-  Clock,
   Briefcase,
   TrendingUp,
   ShieldCheck,
@@ -265,7 +262,7 @@ export const OpportunitiesTab: React.FC = () => {
           <span className="text-xs font-bold text-blue-700">{filteredJobs.length} listings</span>
         </div>
 
-        {/* LinkedIn-style Job Listings Feed */}
+        {/* Job Listings Feed */}
         <div className="divide-y divide-slate-100 bg-white">
           {filteredJobs.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-500">
@@ -312,142 +309,133 @@ export const OpportunitiesTab: React.FC = () => {
                   onClick={(e) => toggleSaveJob(job.id, e)}
                   className="p-1.5 rounded-full hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <Bookmark className={`w-4 h-4 ${savedJobs.includes(job.id) ? 'fill-blue-700 text-blue-700' : ''}`} />
                 </button>
               </div>
             ))
           )}
         </div>
 
-        {/* Detailed Side-Drawer Modal */}
+        {/* Centered Modal Structure */}
         {selectedJob && (
-          <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex justify-end">
-            <div className="w-full max-w-lg bg-white h-full overflow-y-auto shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
-              <div>
-                <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                    <Briefcase className="w-4 h-4 text-blue-700" />
-                    <span>Job Details</span>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+            <div className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+              
+              {/* Modal Header */}
+              <div className="p-4 sm:px-6 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  <Briefcase className="w-4 h-4 text-blue-700" />
+                  <span>Job Details</span>
+                </div>
+                <button
+                  onClick={() => setSelectedJob(null)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-5">
+                <div>
+                  <div className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">
+                    {selectedJob.company}
+                  </div>
+                  <h2 className="text-xl font-extrabold text-slate-900 leading-snug">
+                    {selectedJob.title}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selectedJob.location} • {selectedJob.postedAgo} • {selectedJob.applicantCount}
+                  </p>
+                </div>
+
+                <div className="inline-block bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                  {selectedJob.type} {selectedJob.stipend ? `• ${selectedJob.stipend}` : ''}
+                </div>
+
+                {/* AI Fit Assessment */}
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-slate-800">Use AI to assess how you fit</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors bg-white shadow-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      Show match details
+                    </button>
+                    <button className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors bg-white shadow-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      Help me stand out
+                    </button>
+                  </div>
+                </div>
+
+                {/* Match Details */}
+                <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-800">
+                    <span>APAAR & NCVET Match Score</span>
+                    <span className="text-emerald-700 font-mono">{selectedJob.matchScore}% Match</span>
+                  </div>
+                  <ul className="space-y-1 text-xs text-slate-600">
+                    {selectedJob.matchDetails.map((detail, idx) => (
+                      <li key={idx} className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900">About the job</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {selectedJob.aboutCompany}
+                  </p>
+                </div>
+
+                {/* Alert Toggle */}
+                <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-bold text-slate-900">Set alert for similar jobs</div>
+                    <div className="text-[11px] text-slate-500">{selectedJob.title}, {selectedJob.location}</div>
                   </div>
                   <button
-                    onClick={() => setSelectedJob(null)}
-                    className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500"
+                    onClick={() => toggleAlert(selectedJob.title)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
+                      jobAlerts[selectedJob.title] ? 'bg-blue-700 justify-end' : 'bg-slate-300 justify-start'
+                    }`}
                   >
-                    <X className="w-5 h-5" />
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md" />
                   </button>
                 </div>
 
-                <div className="p-6 border-b border-slate-100 space-y-4">
-                  <div>
-                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">
-                      {selectedJob.company}
-                    </div>
-                    <h2 className="text-xl font-extrabold text-slate-900 leading-snug">
-                      {selectedJob.title}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {selectedJob.location} • {selectedJob.postedAgo} • {selectedJob.applicantCount}
-                    </p>
-                  </div>
-
-                  <div className="inline-block bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    {selectedJob.type} {selectedJob.stipend ? `• ${selectedJob.stipend}` : ''}
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <button className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs py-3 rounded-full transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95">
-                      Apply <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => toggleSaveJob(selectedJob.id)}
-                      className="flex-1 bg-white border border-blue-700 text-blue-700 hover:bg-blue-50 font-bold text-xs py-3 rounded-full transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(selectedJob.id) ? 'fill-blue-700' : ''}`} />
-                      {savedJobs.includes(selectedJob.id) ? 'Saved' : 'Save'}
-                    </button>
-                  </div>
-
-                  {/* AI Fit Assessment */}
-                  <div className="pt-4 space-y-2">
-                    <div className="text-xs font-bold text-slate-800">Use AI to assess how you fit</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors bg-white shadow-xs">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        Show match details
-                      </button>
-                      <button className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors bg-white shadow-xs">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                        Help me stand out
-                      </button>
+                {/* Resume Review Card */}
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <FileText className="w-6 h-6 text-blue-700 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">Put your best foot forward with your application</h4>
+                      <p className="text-[11px] text-slate-500">Get an automated AI resume audit against this posting.</p>
                     </div>
                   </div>
-
-                  {/* Match Details */}
-                  <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2">
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-800">
-                      <span>APAAR & NCVET Match Score</span>
-                      <span className="text-emerald-700 font-mono">{selectedJob.matchScore}% Match</span>
-                    </div>
-                    <ul className="space-y-1 text-xs text-slate-600">
-                      {selectedJob.matchDetails.map((detail, idx) => (
-                        <li key={idx} className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          {detail}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <h3 className="text-sm font-bold text-slate-900">About the job</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {selectedJob.aboutCompany}
-                    </p>
-                  </div>
-
-                  {/* Alert Toggle */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-bold text-slate-900">Set alert for similar jobs</div>
-                      <div className="text-[11px] text-slate-500">{selectedJob.title}, {selectedJob.location}</div>
-                    </div>
-                    <button
-                      onClick={() => toggleAlert(selectedJob.title)}
-                      className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                        jobAlerts[selectedJob.title] ? 'bg-blue-700 justify-end' : 'bg-slate-300 justify-start'
-                      }`}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white shadow-md" />
-                    </button>
-                  </div>
-
-                  {/* Resume Review Card */}
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <FileText className="w-6 h-6 text-blue-700 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">Put your best foot forward with your application</h4>
-                        <p className="text-[11px] text-slate-500">Get an automated AI resume audit against this posting.</p>
-                      </div>
-                    </div>
-                    <button className="w-full py-2 bg-white border border-slate-300 hover:border-slate-400 text-blue-700 font-bold text-xs rounded-lg transition-colors">
-                      Get a resume review
-                    </button>
-                  </div>
+                  <button className="w-full py-2 bg-white border border-slate-300 hover:border-slate-400 text-blue-700 font-bold text-xs rounded-lg transition-colors">
+                    Get a resume review
+                  </button>
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-200 bg-white sticky bottom-0 flex items-center gap-3">
-                <button className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs py-3 rounded-full transition-all flex items-center justify-center gap-1.5">
+              {/* Modal Footer Actions */}
+              <div className="p-4 sm:px-6 border-t border-slate-200 bg-slate-50/50 flex items-center gap-3">
+                <button className="flex-1 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs py-3 rounded-full transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95">
                   Apply <ExternalLink className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => toggleSaveJob(selectedJob.id)}
-                  className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold text-xs py-3 rounded-full transition-all"
+                  className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs py-3 rounded-full transition-all flex items-center justify-center gap-1.5"
                 >
+                  <Bookmark className={`w-3.5 h-3.5 ${savedJobs.includes(selectedJob.id) ? 'fill-blue-700 text-blue-700' : ''}`} />
                   {savedJobs.includes(selectedJob.id) ? 'Saved' : 'Save'}
                 </button>
               </div>
+
             </div>
           </div>
         )}
