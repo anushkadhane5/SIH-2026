@@ -1,16 +1,15 @@
 export type StudentDomain = 'tech' | 'medical' | 'finance' | 'law' | 'creative';
 
-export type VerificationStatus = 'SELF_DECLARED' | 'TEST_VERIFIED' | 'EVIDENCE_VERIFIED';
+export type SkillStatus = 'TEST_VERIFIED' | 'PROJECT_VERIFIED' | 'ASSESSMENT_VERIFIED' | 'NEEDS_VERIFICATION' | 'SELF_DECLARED';
 
 export interface SkillItem {
   id: string;
   name: string;
   category: string;
   domain: StudentDomain;
-  score: number; // 0 to 100
-  status: VerificationStatus;
+  score: number;
+  status: SkillStatus;
   issuer?: string;
-  verifiedAt?: string;
 }
 
 export interface CertificateItem {
@@ -18,8 +17,6 @@ export interface CertificateItem {
   title: string;
   issuingOrganization: string;
   issueDate: string;
-  credentialId?: string;
-  fileUrl?: string;
   isApaarSynced: boolean;
   domain: StudentDomain;
 }
