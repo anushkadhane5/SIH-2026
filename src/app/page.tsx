@@ -11,7 +11,10 @@ import { AssessmentTab } from '../components/student/AssessmentTab';
 import { CoursesTab } from '../components/student/CoursesTab';
 import { OpportunitiesTab } from '../components/student/OpportunitiesTab';
 import { SchemesTab } from '../components/student/SchemesTab';
-import { Shield, FileText, Target, BookOpen, Briefcase, Award, Building2, Users, Search, CheckCircle2 } from 'lucide-react';
+import { GithubVerificationModal } from '../components/GithubVerificationModal';
+import { DomainOnboardingModal } from '../components/student/DomainOnboardingModal';
+import { Shield, FileText, Target, BookOpen, Briefcase, Award, Search, FolderGit2, RefreshCw } from 'lucide-react';
+import { StudentDomain } from '../types/student';
 
 const INITIAL_SKILLS = [
   { id: '1', name: 'Data Structures & Algorithms', category: 'Core CS', score: 72, required: 80, status: 'ASSESSMENT_VERIFIED', issuer: 'NPTEL / AICTE' },
@@ -25,9 +28,16 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authRoleHint, setAuthRoleHint] = useState<UserRole>('student');
 
+  // Profession Domain state (default: tech)
+  const [userDomain, setUserDomain] = useState<StudentDomain>('tech');
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+
   // Navigation state inside student dashboard
   const [studentNav, setStudentNav] = useState<'passport' | 'resume' | 'test' | 'courses' | 'opportunities' | 'schemes'>('passport');
   const [skills, setSkills] = useState(INITIAL_SKILLS);
+
+  // GitHub Project Verification Modal state
+  const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
 
   const handleOpenAuth = (role: UserRole = 'student') => {
     setAuthRoleHint(role);
@@ -46,13 +56,17 @@ export default function App() {
           onSuccess={(userData) => {
             setUser(userData);
             setIsAuthOpen(false);
+            // Open domain modal on first login for student
+            if (userData.role === 'student') {
+              setIsDomainModalOpen(true);
+            }
           }}
         />
       </>
     );
   }
 
-  const overallReadiness = Math.round(skills.reduce((acc, s) => acc + s.score, 0) / skills.length);
+  const overallReadiness = Math.round(skills.reduce((acc, s) => acc + s.score, 0) / (skills.length || 1));
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
@@ -68,13 +82,28 @@ export default function App() {
         {/* 1. STUDENT DASHBOARD */}
         {user.role === 'student' && (
           <>
+            <div className="flex items-center justify-between bg-white px-6 py-3 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <span>Active Profession/Stream:</span>
+                <span className="px-3 py-1 bg-blue-900 text-white rounded-lg font-bold uppercase tracking-wider text-[11px]">
+                  {userDomain}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsDomainModalOpen(true)}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Switch Profession Profile
+              </button>
+            </div>
+
             <IdentityCard
               student={{
                 name: user.name,
                 apaarId: 'APAAR-9876-5432-1012',
-                institution: 'AIIT Delhi',
-                degree: 'B.Tech CSE',
-                targetRole: 'SDE-1',
+                institution: userDomain === 'medical' ? 'AIIMS New Delhi' : userDomain === 'finance' ? 'ICAI Institute' : 'AIIT Delhi',
+                degree: userDomain === 'medical' ? 'MBBS' : userDomain === 'finance' ? 'CA Intermediate' : 'B.Tech CSE',
+                targetRole: userDomain === 'medical' ? 'Clinical Resident' : userDomain === 'finance' ? 'Tax Consultant' : 'SDE-1',
                 streak: 12,
                 dailyGoalMins: 45,
                 completedMins: 30,
@@ -82,118 +111,94 @@ export default function App() {
               overallReadiness={overallReadiness}
             />
 
-            <div className="flex border-b border-slate-300 text-xs font-bold gap-6 bg-white px-4 rounded-t-xl overflow-x-auto">
-              {[
-                { id: 'passport', label: `Skill Passport (${skills.length})`, icon: Shield },
-                { id: 'resume', label: 'AI Resume Upload', icon: FileText },
-                { id: 'test', label: 'Assessment', icon: Target },
-                { id: 'courses', label: 'Courses', icon: BookOpen },
-                { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
-                { id: 'schemes', label: 'Schemes', icon: Award },
-              ].map(tab => (
+            <div className="flex justify-between items-center border-b border-slate-300 bg-white px-4 rounded-t-xl overflow-x-auto">
+              <div className="flex text-xs font-bold gap-6">
+                {[
+                  { id: 'passport', label: `Skill Passport (${skills.length})`, icon: Shield },
+                  { id: 'resume', label: 'AI Resume Upload', icon: FileText },
+                  { id: 'test', label: 'Assessment', icon: Target },
+                  { id: 'courses', label: 'Courses', icon: BookOpen },
+                  { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
+                  { id: 'schemes', label: 'Schemes', icon: Award },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setStudentNav(tab.id as any)}
+                    className={`py-3.5 flex items-center gap-2 border-b-2 whitespace-nowrap ${
+                      studentNav === tab.id ? 'border-blue-900 text-blue-900' : 'border-transparent text-slate-600'
+                    }`}
+                  >
+                    <tab.icon className="w-4 h-4" /> {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {userDomain === 'tech' && (
                 <button
-                  key={tab.id}
-                  onClick={() => setStudentNav(tab.id as any)}
-                  className={`py-3.5 flex items-center gap-2 border-b-2 whitespace-nowrap ${
-                    studentNav === tab.id ? 'border-blue-900 text-blue-900' : 'border-transparent text-slate-600'
-                  }`}
+                  onClick={() => setIsGithubModalOpen(true)}
+                  className="my-2 px-3 py-1.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 shadow-xs"
                 >
-                  <tab.icon className="w-4 h-4" /> {tab.label}
+                  <FolderGit2 className="w-4 h-4 text-blue-400" />
+                  <span>Verify GitHub Project</span>
                 </button>
-              ))}
+              )}
             </div>
 
-            {studentNav === 'passport' && <SkillPassportTab skills={skills} onNavigateToTest={() => setStudentNav('test')} />}
-            {studentNav === 'resume' && <ResumeOptimizerTab onApplyAIFix={(newSkills) => setSkills(p => [...p, ...newSkills])} />}
-            {studentNav === 'test' && <AssessmentTab onQuizComplete={(score) => setSkills(p => p.map(s => s.name.includes('SQL') ? {...s, score, status: 'ASSESSMENT_VERIFIED'} : s))} onNavigateToPassport={() => setStudentNav('passport')} />}
-            {studentNav === 'courses' && <CoursesTab />}
+            {studentNav === 'passport' && (
+              <SkillPassportTab
+                userDomain={userDomain}
+                onNavigateToCourses={() => setStudentNav('courses')}
+              />
+            )}
+            {studentNav === 'resume' && (
+              <ResumeOptimizerTab
+                onApplyAIFix={(newSkills) => setSkills(p => [...p, ...newSkills])}
+              />
+            )}
+            {studentNav === 'test' && (
+              <AssessmentTab
+                onQuizComplete={(score) => setSkills(p => p.map(s => s.name.includes('SQL') ? {...s, score, status: 'ASSESSMENT_VERIFIED'} : s))}
+                onNavigateToPassport={() => setStudentNav('passport')}
+              />
+            )}
+            {studentNav === 'courses' && <CoursesTab userDomain={userDomain} />}
             {studentNav === 'opportunities' && <OpportunitiesTab />}
             {studentNav === 'schemes' && <SchemesTab />}
           </>
         )}
 
-        {/* 2. RECRUITER / INDUSTRY DASHBOARD */}
-        {user.role === 'recruiter' && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-300 p-6 rounded-xl space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider">Enterprise Access</span>
-                  <h2 className="text-xl font-bold text-slate-900">Industry Candidate Talent Pool</h2>
-                </div>
-                <button className="bg-indigo-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
-                  + Post NAPS Apprenticeship Job
-                </button>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Search by verified skills (e.g. React.js, Python, SQL)..."
-                    className="w-full pl-9 pr-4 py-2 text-xs border border-slate-300 rounded-lg"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-300 rounded-xl p-6 space-y-4">
-              <h3 className="font-bold text-sm text-slate-900">Verified Candidates (APAAR Synchronized)</h3>
-              <div className="space-y-3">
-                {[
-                  { name: 'Aarav Sharma', college: 'AIIT Delhi', readiness: 67, skills: ['React.js', 'Algorithms', 'SQL'] },
-                  { name: 'Priya Patel', college: 'IIT Bombay', readiness: 92, skills: ['System Design', 'AWS', 'Python'] },
-                  { name: 'Rohan Gupta', college: 'NIT Surathkal', readiness: 84, skills: ['Node.js', 'Docker', 'PostgreSQL'] },
-                ].map((c, i) => (
-                  <div key={i} className="bg-slate-50 border border-slate-200 p-4 rounded-lg flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900">{c.name}</h4>
-                      <p className="text-xs text-slate-500">{c.college} • Skills: {c.skills.join(', ')}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className="text-xs font-bold text-emerald-700">{c.readiness}% Match</span>
-                        <p className="text-[10px] text-slate-400">NCVET Score</p>
-                      </div>
-                      <button className="bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-md">
-                        View Passport
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3. FACULTY / UNIVERSITY DASHBOARD */}
-        {user.role === 'faculty' && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-300 p-6 rounded-xl space-y-2">
-              <span className="text-[10px] font-bold text-emerald-900 uppercase">Institutional Dashboard</span>
-              <h2 className="text-xl font-bold text-slate-900">Academic Cohort Skill Readiness</h2>
-              <p className="text-xs text-slate-500">Monitor NPTEL credit synchronization and curriculum skill gaps across batches.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-5 border border-slate-300 rounded-xl">
-                <span className="text-xs font-semibold text-slate-500">Total Enrolled Students</span>
-                <p className="text-2xl font-bold text-slate-900 mt-1">1,240</p>
-              </div>
-              <div className="bg-white p-5 border border-slate-300 rounded-xl">
-                <span className="text-xs font-semibold text-slate-500">Avg Job Readiness Score</span>
-                <p className="text-2xl font-bold text-blue-900 mt-1">74%</p>
-              </div>
-              <div className="bg-white p-5 border border-slate-300 rounded-xl">
-                <span className="text-xs font-semibold text-slate-500">NPTEL Certifications Active</span>
-                <p className="text-2xl font-bold text-emerald-700 mt-1">890</p>
-              </div>
-            </div>
-          </div>
-        )}
-
       </main>
+
+      {/* Domain Selection Modal */}
+      <DomainOnboardingModal
+        isOpen={isDomainModalOpen}
+        currentDomain={userDomain}
+        onSelectDomain={(d) => setUserDomain(d)}
+        onClose={() => setIsDomainModalOpen(false)}
+      />
+
+      {/* GitHub Project Verification Overlay Modal */}
+      {isGithubModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <GithubVerificationModal
+            onClose={() => setIsGithubModalOpen(false)}
+            onSuccess={() => {
+              setSkills(prev => [
+                ...prev,
+                {
+                  id: Date.now().toString(),
+                  name: 'Verified Project Ownership',
+                  category: 'Fullstack / Git',
+                  score: 95,
+                  required: 75,
+                  status: 'PROJECT_VERIFIED',
+                  issuer: 'SkillBridge AI Github Scan',
+                }
+              ]);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
