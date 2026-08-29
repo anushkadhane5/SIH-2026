@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +24,7 @@
         }
     </script>
     <!-- Google Fonts & FontAwesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -35,9 +35,9 @@
             padding: 0;
             overflow-x: hidden;
         }
-        .font-brand { font-family: 'Cinzel', serif; }
+        .font-brand { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* Fixed Global Background Layer (Under All Views) */
+        /* Fixed Global Background Layer */
         #global-background {
             position: fixed;
             inset: 0;
@@ -92,14 +92,14 @@
 
         /* Glassmorphism Overrides */
         .glass-card {
-            background: rgba(255, 255, 255, 0.78) !important;
+            background: rgba(255, 255, 255, 0.82) !important;
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(226, 232, 240, 0.85) !important;
+            border: 1px solid rgba(226, 232, 240, 0.9) !important;
         }
 
         .card-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.06); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.08); }
         .badge-tricolor { background: linear-gradient(90deg, #f77f00 0%, #cbd5e1 50%, #007f5f 100%); }
 
         @media (prefers-reduced-motion: reduce) {
@@ -124,6 +124,11 @@
     <div id="app-content" class="min-h-screen flex flex-col justify-between">
         <div id="app"></div>
     </div>
+
+    <!-- Floating Scroll-To-Top Quick Action -->
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Scroll to Top" class="fixed bottom-6 right-6 w-11 h-11 rounded-full bg-slate-900 text-amber-400 hover:bg-slate-800 shadow-2xl z-50 flex items-center justify-center transition border border-slate-700">
+        <i class="fa-solid fa-arrow-up text-sm"></i>
+    </button>
 
     <script>
         // ==================== GLOBAL NETWORK ANIMATION ENGINE ====================
@@ -509,8 +514,8 @@
                             </div>
                         </div>
                         <div>
-                            <span class="${textClass} font-bold tracking-tight text-slate-900 font-brand">Skill<span class="text-blue-700">Bridge</span></span>
-                            <span class="block text-[9px] uppercase tracking-widest text-slate-500 font-semibold font-sans">National Academia-Industry Portal • NEP 2020</span>
+                            <span class="${textClass} font-extrabold tracking-tight text-slate-900 font-brand">Skill<span class="text-blue-700">Bridge</span></span>
+                            <span class="block text-[9px] uppercase tracking-widest text-slate-500 font-bold font-sans">National Academia-Industry Portal • NEP 2020</span>
                         </div>
                     </div>
                 `;
@@ -535,34 +540,59 @@
                 `;
             },
 
+            toggleFaq: function(index) {
+                const answer = document.getElementById(`faq-ans-${index}`);
+                const icon = document.getElementById(`faq-icon-${index}`);
+                if (answer) {
+                    const isHidden = answer.classList.contains('hidden');
+                    if (isHidden) {
+                        answer.classList.remove('hidden');
+                        icon.classList.replace('fa-plus', 'fa-minus');
+                    } else {
+                        answer.classList.add('hidden');
+                        icon.classList.replace('fa-minus', 'fa-plus');
+                    }
+                }
+            },
+
             renderLanding: function(app) {
+                const faqs = [
+                    {
+                        q: "What is SkillBridge and how does it align with NEP 2020?",
+                        a: "SkillBridge is a national academia-industry collaboration platform that bridges skill gaps between educational institutions and industrial standards. It fully integrates with the National Education Policy (NEP 2020) and Academic Bank of Credits (ABC) to enable seamlessly transferrable academic credits."
+                    },
+                    {
+                        q: "How does the APAAR / ABC Student Credit System work?",
+                        a: "Every student profile is verified via their 12-digit APAAR ID. Upon completing accredited capstones or timed quizzes on SkillBridge, earned academic credits are directly posted to your official Academic Bank of Credits ledger."
+                    },
+                    {
+                        q: "How does the automated AI Skill Assessment evaluate candidates?",
+                        a: "The built-in AI engine analyzes candidate-submitted GitHub repositories, research DOI publications, and technical project experience against industry standards (NHEQF Level 7). It maps domain-specific competencies and suggests personalized learning pathways."
+                    },
+                    {
+                        q: "How can Industry Recruiters and R&D facilities participate?",
+                        a: "Industries can post skill-mapped internships and placements, browse verified student portfolios with authenticated APAAR credentials, and directly invite high-scoring candidates for technical interviews."
+                    }
+                ];
+
                 app.innerHTML = `
                     <div class="min-h-screen text-slate-800 flex flex-col justify-between">
                         ${this.renderGovBanner()}
-                        <nav class="border-b border-slate-200/60 bg-white/60 backdrop-blur-md sticky top-0 z-40">
+                        <nav class="border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-40 shadow-sm">
                             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
                                 ${this.getLogoHtml()}
-                                <div class="flex items-center space-x-3">
-                                    <button onclick="App.showLogin('student')" class="text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm">
-                                        <i class="fa-solid fa-user-graduate mr-1.5"></i> Student Portal
-                                    </button>
-                                    <button onclick="App.showLogin('academician')" class="text-xs font-semibold px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white transition shadow-sm">
-                                        <i class="fa-solid fa-chalkboard-user mr-1.5"></i> Academician
-                                    </button>
-                                    <button onclick="App.showLogin('industrialist')" class="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition shadow-sm">
-                                        <i class="fa-solid fa-building mr-1.5"></i> Industry
-                                    </button>
+                                <div class="hidden md:flex items-center space-x-3 text-base font-extrabold text-slate-900">
+                                    <a href="#stakeholders" class="px-4 py-2 rounded-xl bg-blue-50/90 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white transition shadow-sm">Stakeholders</a>
+                                    <a href="#impact" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">National Impact</a>
+                                    <a href="#pipeline" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">AI Architecture</a>
+                                    <a href="#faq" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">FAQ</a>
                                 </div>
                             </div>
                         </nav>
 
-                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 text-center z-10 relative">
-                            <div class="inline-flex items-center space-x-2 glass-card border border-slate-200/80 shadow-sm rounded-full px-4 py-1.5 text-xs text-blue-900 mb-6 font-medium">
-                                <span class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
-                                <span>APAAR & NCVET Compliant National Framework</span>
-                            </div>
-
-                            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6 text-slate-900">
+                        <!-- MAIN HERO SECTION -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 text-center z-10 relative">
+                            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6 text-slate-900 font-brand">
                                 Unified Skill Validation & <br>
                                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-600">
                                     Academic Gap Intelligence Platform
@@ -572,84 +602,179 @@
                             <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
                                 Connecting Students, Enterprises, and Educational Institutions with real-time AI skill mapping, NPTEL/AYUSH credit transfer, and official qualification records.
                             </p>
+                        </div>
 
-                            <div class="flex flex-wrap justify-center gap-4 mb-16">
-                                <button onclick="App.showLogin('student')" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-lg transition flex items-center">
-                                    Create Skill Passport <i class="fa-solid fa-arrow-right ml-2"></i>
-                                </button>
-                                <button onclick="App.showLogin('industrialist')" class="px-6 py-3 glass-card hover:bg-white text-slate-800 border border-slate-300 font-semibold text-sm rounded-xl shadow-sm transition">
-                                    Enterprise Recruiting Portal
-                                </button>
-                            </div>
+                        <!-- SECTION: DESIGNED FOR KEY STAKEHOLDERS -->
+                        <div id="stakeholders" class="scroll-mt-20 pb-16 px-4 sm:px-6 lg:px-8 z-10 relative">
+                            <div class="max-w-6xl mx-auto text-center">
+                                <span class="text-xs font-bold uppercase tracking-widest text-blue-800 inline-block mb-8 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200">
+                                    DESIGNED FOR KEY STAKEHOLDERS
+                                </span>
 
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
-                                <div class="glass-card p-4 rounded-xl shadow-sm text-center">
-                                    <div class="text-2xl font-extrabold text-blue-700">100%</div>
-                                    <div class="text-xs text-slate-500 font-medium mt-1">APAAR Integrated</div>
-                                </div>
-                                <div class="glass-card p-4 rounded-xl shadow-sm text-center">
-                                    <div class="text-2xl font-extrabold text-slate-900">AICTE</div>
-                                    <div class="text-xs text-slate-500 font-medium mt-1">Credit Compliant</div>
-                                </div>
-                                <div class="glass-card p-4 rounded-xl shadow-sm text-center">
-                                    <div class="text-2xl font-extrabold text-blue-700">NAPS 2.0</div>
-                                    <div class="text-xs text-slate-500 font-medium mt-1">Stipend Eligible</div>
-                                </div>
-                                <div class="glass-card p-4 rounded-xl shadow-sm text-center">
-                                    <div class="text-2xl font-extrabold text-emerald-700">NCVET</div>
-                                    <div class="text-xs text-slate-500 font-medium mt-1">Verified Qualification</div>
-                                </div>
-                            </div>
-
-                            <div class="text-xs font-bold uppercase tracking-widest text-blue-800 mb-6">Designed for Key Stakeholders</div>
-
-                            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto text-left">
-                                <div class="glass-card border border-slate-200/80 hover:border-blue-500 rounded-2xl p-6 card-hover flex flex-col justify-between shadow-sm">
-                                    <div>
-                                        <div class="w-12 h-12 rounded-xl bg-blue-50/80 border border-blue-200 flex items-center justify-center text-blue-600 text-xl mb-4">
-                                            <i class="fa-solid fa-graduation-cap"></i>
+                                <div class="grid md:grid-cols-3 gap-6 text-left">
+                                    <!-- STUDENTS & RESEARCHERS -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 text-lg mb-6">
+                                                <i class="fa-solid fa-graduation-cap"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Students & Researchers</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Complete automated AI assessment across GitHub repos, research papers, and technical tests. Accumulate NEP 2020 APAAR credits.
+                                            </p>
                                         </div>
-                                        <h3 class="text-xl font-bold text-slate-900 mb-2">Students & Researchers</h3>
-                                        <p class="text-slate-600 text-xs mb-4 leading-relaxed">
-                                            Complete automated AI assessment across GitHub repos, research papers, and technical tests. Accumulate NEP 2020 APAAR credits.
-                                        </p>
+                                        <button onclick="App.showLogin('student')" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Student Login / Register &rarr;
+                                        </button>
                                     </div>
-                                    <button onclick="App.showLogin('student')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">
-                                        Student Login / Register &rarr;
-                                    </button>
-                                </div>
 
-                                <div class="glass-card border border-slate-200/80 hover:border-emerald-500 rounded-2xl p-6 card-hover flex flex-col justify-between shadow-sm">
-                                    <div>
-                                        <div class="w-12 h-12 rounded-xl bg-emerald-50/80 border border-emerald-200 flex items-center justify-center text-emerald-600 text-xl mb-4">
-                                            <i class="fa-solid fa-book-medical"></i>
+                                    <!-- ACADEMICIANS & FACULTY -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 text-lg mb-6">
+                                                <i class="fa-solid fa-notes-medical"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Academicians & Faculty</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Publish deadline-based certified courses, launch timed quizzes, and participate in FDPs & AYUSH clinical research.
+                                            </p>
                                         </div>
-                                        <h3 class="text-xl font-bold text-slate-900 mb-2">Academicians & Faculty</h3>
-                                        <p class="text-slate-600 text-xs mb-4 leading-relaxed">
-                                            Publish deadline-based certified courses, launch timed quizzes, and participate in FDPs & AYUSH clinical research.
-                                        </p>
+                                        <button onclick="App.showLogin('academician')" class="w-full py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Faculty Portal &rarr;
+                                        </button>
                                     </div>
-                                    <button onclick="App.showLogin('academician')" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold transition">
-                                        Faculty Portal &rarr;
-                                    </button>
-                                </div>
 
-                                <div class="glass-card border border-slate-200/80 hover:border-amber-500 rounded-2xl p-6 card-hover flex flex-col justify-between shadow-sm">
-                                    <div>
-                                        <div class="w-12 h-12 rounded-xl bg-amber-50/80 border border-amber-200 flex items-center justify-center text-amber-600 text-xl mb-4">
-                                            <i class="fa-solid fa-briefcase"></i>
+                                    <!-- INDUSTRY & R&D LABS -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 text-lg mb-6">
+                                                <i class="fa-solid fa-briefcase"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Industry & R&D Labs</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Post skill-mapped internships and placements. Directly review verified candidate scores and APAAR credit portfolios.
+                                            </p>
                                         </div>
-                                        <h3 class="text-xl font-bold text-slate-900 mb-2">Industry & R&D Labs</h3>
-                                        <p class="text-slate-600 text-xs mb-4 leading-relaxed">
-                                            Post skill-mapped internships and placements. Directly review verified candidate scores and APAAR credit portfolios.
-                                        </p>
+                                        <button onclick="App.showLogin('industrialist')" class="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Industry Access &rarr;
+                                        </button>
                                     </div>
-                                    <button onclick="App.showLogin('industrialist')" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition">
-                                        Industry Access &rarr;
-                                    </button>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- REMAINING SECTIONS DOWN BELOW -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center z-10 relative">
+
+                            <!-- SCROLL SECTION 1: LIVE IMPACT STATS -->
+                            <div id="impact" class="scroll-mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto mb-20">
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-blue-700 font-brand">1.2M+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">APAAR IDs Linked</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Real-time ABC Verification</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-slate-900 font-brand">450+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">Industry Partners</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Dabur, Patanjali, AIIMS & Tech</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-emerald-700 font-brand">98.4%</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">AI Match Accuracy</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">NHEQF Level 7 Standards</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-amber-600 font-brand">350k+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">NEP Credits Awarded</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">AYUSH & NPTEL Modules</div>
+                                </div>
+                            </div>
+
+                            <!-- SCROLL SECTION 2: AI PIPELINE & ARCHITECTURE -->
+                            <div id="pipeline" class="scroll-mt-20 max-w-5xl mx-auto text-left mb-24 glass-card p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                <div class="text-center max-w-xl mx-auto mb-10">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-700 block mb-1">SIH Architecture Overview</span>
+                                    <h2 class="text-2xl font-bold text-slate-900">How SkillBridge AI Intelligence Operates</h2>
+                                    <p class="text-xs text-slate-500 mt-1">Automated multi-stage assessment from code repositories to government credit ledgers.</p>
+                                </div>
+
+                                <div class="grid md:grid-cols-3 gap-6 relative">
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs mb-3">01</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">Telemetry & Code Ingestion</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Extracts live commit signals from GitHub, checks unit test coverage, and verifies Scopus/UGC research DOIs.</p>
+                                    </div>
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs mb-3">02</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">AI Skill-Gap Engine</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Compares candidate profile with real-time enterprise job requirements (e.g. AYUSH GCP, Microservices, HPLC).</p>
+                                    </div>
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs mb-3">03</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">APAAR / ABC Credit Posting</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Automatically transfers earned credits upon completing timed quizzes to national student records.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SCROLL SECTION 3: TESTIMONIALS & RECOGNITION -->
+                            <div class="max-w-5xl mx-auto text-left mb-20">
+                                <div class="text-center mb-8">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-amber-600 block mb-1">Ecosystem Feedback</span>
+                                    <h2 class="text-2xl font-bold text-slate-900">Trusted Across Institutions & Enterprises</h2>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div class="glass-card p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <div class="flex items-center space-x-3 mb-3">
+                                            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">AS</div>
+                                            <div>
+                                                <h4 class="font-bold text-xs text-slate-800">Aaditya Sharma</h4>
+                                                <p class="text-[10px] text-slate-500">AYUSH Researcher • APAAR 8942-7712-4401</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-slate-600 italic">"The AI skill gap engine correctly identified my gap in AYUSH Good Clinical Practices and helped me bridge it. I was directly shortlisted for an R&D internship!"</p>
+                                    </div>
+                                    <div class="glass-card p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <div class="flex items-center space-x-3 mb-3">
+                                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-sm">VJ</div>
+                                            <div>
+                                                <h4 class="font-bold text-xs text-slate-800">Prof. (Dr.) V. K. Joshi</h4>
+                                                <p class="text-[10px] text-slate-500">National Institute of Ayurveda</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-slate-600 italic">"Publishing NEP-accredited quizzes and seeing credits automatically transfer to students' ABC accounts in real time is a huge step forward for academia."</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FAQ SECTION -->
+                            <div id="faq" class="scroll-mt-20 max-w-4xl mx-auto text-left border-t border-slate-200/80 pt-16">
+                                <div class="text-center mb-10">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-blue-800 block mb-1">Got Questions?</span>
+                                    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+                                    <p class="text-xs text-slate-500 mt-1">Everything you need to know about APAAR credits, AI evaluation, and governance.</p>
+                                </div>
+
+                                <div class="space-y-3">
+                                    ${faqs.map((faq, idx) => `
+                                        <div class="glass-card rounded-xl border border-slate-200/80 overflow-hidden shadow-sm transition">
+                                            <button onclick="App.toggleFaq(${idx})" class="w-full px-6 py-4 text-left text-sm font-bold text-slate-800 flex justify-between items-center focus:outline-none hover:text-blue-700">
+                                                <span>${faq.q}</span>
+                                                <i id="faq-icon-${idx}" class="fa-solid fa-plus text-slate-400 text-xs ml-4"></i>
+                                            </button>
+                                            <div id="faq-ans-${idx}" class="hidden px-6 pb-4 text-xs text-slate-600 leading-relaxed border-t border-slate-100/60 pt-3">
+                                                ${faq.a}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer class="bg-slate-950/90 backdrop-blur-md border-t border-slate-800 text-slate-400 text-xs py-4 text-center z-10">
+                            SkillBridge • Ministry of AYUSH, AICTE & NEP-2020 Academic Bank of Credits (ABC) Aligned Ecosystem
+                        </footer>
                     </div>
                 `;
             },
@@ -1541,7 +1666,7 @@
                     info: 'bg-slate-900 text-amber-300 border-slate-800'
                 };
                 const toast = document.createElement('div');
-                toast.className = `fixed bottom-6 right-6 ${colorMap[type]} px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold z-50 transition-all duration-300 flex items-center space-x-2`;
+                toast.className = `fixed bottom-6 left-6 ${colorMap[type]} px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold z-50 transition-all duration-300 flex items-center space-x-2`;
                 toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
                 document.body.appendChild(toast);
                 setTimeout(() => {
