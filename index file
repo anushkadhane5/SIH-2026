@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillBridge - AI-Powered Academia-Industry & AYUSH NEP-2020 Ecosystem</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gov: {
+                            blue: '#1e40af',
+                            navy: '#0f172a',
+                            saffron: '#d97706',
+                            green: '#047857',
+                            ayush: '#115e59'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #fdfbf7;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .font-brand { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        /* Fixed Global Background Layer */
+        #global-background {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background-color: #fcfbf9;
+        }
+
+        #app-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Technical Moving Grid */
+        .milky-hero-pattern {
+            position: absolute;
+            inset: -40px;
+            background-image: 
+                linear-gradient(to right, rgba(30, 64, 175, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(30, 64, 175, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: moveGrid 30s linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes moveGrid {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(40px, 40px, 0); }
+        }
+
+        /* Atmospheric Light Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.35;
+            animation: floatOrb 22s ease-in-out infinite alternate;
+            will-change: transform;
+        }
+
+        .orb-1 { width: 500px; height: 500px; background: #dbeafe; top: -100px; left: -100px; }
+        .orb-2 { width: 550px; height: 550px; background: #fef3c7; bottom: -150px; right: -100px; animation-delay: -7s; }
+        .orb-3 { width: 450px; height: 450px; background: #d1fae5; top: 35%; left: 40%; animation-delay: -14s; }
+        .orb-4 { width: 380px; height: 380px; background: #e0e7ff; bottom: 10%; left: 5%; animation-delay: -4s; }
+
+        @keyframes floatOrb {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(40px, -50px, 0) scale(1.08); }
+            100% { transform: translate3d(-30px, 40px, 0) scale(0.95); }
+        }
+
+        /* Glassmorphism Overrides */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.82) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(226, 232, 240, 0.9) !important;
+        }
+
+        .card-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -5px rgba(0,0,0,0.08); }
+        .badge-tricolor { background: linear-gradient(90deg, #f77f00 0%, #cbd5e1 50%, #007f5f 100%); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .milky-hero-pattern, .orb { animation: none !important; }
+            #bg-canvas { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Global Persistent Background Engine Container -->
+    <div id="global-background">
+        <div class="milky-hero-pattern" id="grid-layer"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
+        <canvas id="bg-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+    </div>
+
+    <!-- Main Dynamic Application Container -->
+    <div id="app-content" class="min-h-screen flex flex-col justify-between">
+        <div id="app"></div>
+    </div>
+
+    <!-- Floating Scroll-To-Top Quick Action -->
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Scroll to Top" class="fixed bottom-6 right-6 w-11 h-11 rounded-full bg-slate-900 text-amber-400 hover:bg-slate-800 shadow-2xl z-50 flex items-center justify-center transition border border-slate-700">
+        <i class="fa-solid fa-arrow-up text-sm"></i>
+    </button>
+
+    <script>
+        // ==================== GLOBAL NETWORK ANIMATION ENGINE ====================
+        const GlobalBackgroundEngine = {
+            canvas: null,
+            ctx: null,
+            nodes: [],
+            mouse: { x: -1000, y: -1000, targetX: -1000, targetY: -1000 },
+            maxNodes: window.innerWidth < 768 ? 14 : 28,
+
+            init: function() {
+                this.canvas = document.getElementById('bg-canvas');
+                if (!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+
+                this.nodes = [];
+                const colors = ['rgba(30, 64, 175, ', 'rgba(4, 120, 87, ', 'rgba(217, 119, 6, '];
+
+                for (let i = 0; i < this.maxNodes; i++) {
+                    this.nodes.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 0.35,
+                        vy: (Math.random() - 0.5) * 0.35,
+                        radius: Math.random() * 2 + 1.2,
+                        color: colors[Math.floor(Math.random() * colors.length)]
+                    });
+                }
+
+                window.addEventListener('resize', () => this.resize());
+                window.addEventListener('mousemove', (e) => {
+                    this.mouse.targetX = e.clientX;
+                    this.mouse.targetY = e.clientY;
+
+                    const gridLayer = document.getElementById('grid-layer');
+                    if (gridLayer) {
+                        const moveX = (e.clientX / window.innerWidth - 0.5) * 14;
+                        const moveY = (e.clientY / window.innerHeight - 0.5) * 14;
+                        gridLayer.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
+                    }
+                });
+
+                if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.animate();
+                }
+            },
+
+            resize: function() {
+                if (!this.canvas) return;
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            },
+
+            animate: function() {
+                const self = GlobalBackgroundEngine;
+                self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
+
+                self.mouse.x += (self.mouse.targetX - self.mouse.x) * 0.05;
+                self.mouse.y += (self.mouse.targetY - self.mouse.y) * 0.05;
+
+                for (let i = 0; i < self.nodes.length; i++) {
+                    let n = self.nodes[i];
+                    n.x += n.vx;
+                    n.y += n.vy;
+
+                    if (n.x < 0 || n.x > self.canvas.width) n.vx *= -1;
+                    if (n.y < 0 || n.y > self.canvas.height) n.vy *= -1;
+
+                    self.ctx.beginPath();
+                    self.ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+                    self.ctx.fillStyle = n.color + '0.5)';
+                    self.ctx.fill();
+
+                    for (let j = i + 1; j < self.nodes.length; j++) {
+                        let n2 = self.nodes[j];
+                        let dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+
+                        if (dist < 160) {
+                            self.ctx.beginPath();
+                            self.ctx.moveTo(n.x, n.y);
+                            self.ctx.lineTo(n2.x, n2.y);
+                            self.ctx.strokeStyle = n.color + (0.15 * (1 - dist / 160)).toFixed(2) + ')';
+                            self.ctx.lineWidth = 0.8;
+                            self.ctx.stroke();
+                        }
+                    }
+
+                    let mDist = Math.hypot(n.x - self.mouse.x, n.y - self.mouse.y);
+                    if (mDist < 190) {
+                        self.ctx.beginPath();
+                        self.ctx.moveTo(n.x, n.y);
+                        self.ctx.lineTo(self.mouse.x, self.mouse.y);
+                        self.ctx.strokeStyle = 'rgba(30, 64, 175, ' + (0.18 * (1 - mDist / 190)).toFixed(2) + ')';
+                        self.ctx.lineWidth = 1;
+                        self.ctx.stroke();
+                    }
+                }
+
+                requestAnimationFrame(self.animate);
+            }
+        };
+
+        // ==================== IN-MEMORY DATABASE ====================
+        const DB = {
+            users: [],
+            courses: [],
+            internships: [],
+            placements: [],
+            currentUser: null,
+
+            seed: function() {
+                if (this.users.length === 0) {
+                    this.users = [
+                        {
+                            id: 1,
+                            name: 'Aaditya Sharma',
+                            email: 'student@demo.com',
+                            password: 'demo123',
+                            role: 'student',
+                            apaarId: '8942-7712-4401',
+                            apaarVerified: true,
+                            domain: 'ayush',
+                            subDomain: 'Ayurvedic Pharmacognosy & Dravyaguna',
+                            skills: ['Herb Standardization', 'Clinical Trial Protocols', 'Phytochemistry', 'Ayush Grid API'],
+                            projects: ['Ayurvedic Herbal Compound Quality Database', 'Automated Prakriti Assessment AI'],
+                            researchPapers: ['Standardization of Ashwagandha Withanolides (DOI: 10.1016/ayush.2025.04)'],
+                            github: 'https://github.com/aaditya-ayush-research',
+                            level: 'Advanced',
+                            abcCredits: 28,
+                            assessment: {
+                                score: 88,
+                                level: 'Advanced (NHEQF Level 7)',
+                                repoAudit: 'Clean modular codebase, automated quality control scripts, standardized test fixtures.',
+                                researchWeight: 'High (Indexed in Scopus / UGC-CARE AYUSH Category)',
+                                gaps: ['Ayush GCP Regulatory Compliance', 'Bioinformatics docking tools'],
+                                suggestions: [
+                                    'Complete ICMR/AYUSH Good Clinical Practice (GCP) Module',
+                                    'Undertake molecular docking workflows for active phyto-compounds'
+                                ],
+                                roadmap: [
+                                    { phase: 'Phase 1 (Month 1-2)', title: 'Foundations & Pharmacopoeial Standards', desc: 'Study Ayurvedic Pharmacopoeia of India (API), PLIM monographs, and raw material validation.' },
+                                    { phase: 'Phase 2 (Month 3-4)', title: 'Bio-Analytical & Clinical Protocols', desc: 'Master HPLC/HPTLC fingerprinting, AYUSH GCP, and electronic health record formats on AYUSH Grid.' },
+                                    { phase: 'Phase 3 (Month 5-6)', title: 'Industry Integration & Clinical Trials', desc: 'Undertake real-time clinical data compilation, stability testing, and Ministry compliance audits.' }
+                                ]
+                            }
+                        },
+                        {
+                            id: 2,
+                            name: 'Prof. (Dr.) V. K. Joshi',
+                            email: 'academic@demo.com',
+                            password: 'demo123',
+                            role: 'academician',
+                            institution: 'National Institute of Ayurveda / All India Council',
+                            domain: 'ayush',
+                            skills: ['Dravyaguna', 'Integrative Medicine', 'NEP 2020 Curriculum'],
+                            courses: [1, 2]
+                        },
+                        {
+                            id: 3,
+                            name: 'Himalaya & Dabur Health R&D',
+                            email: 'industry@demo.com',
+                            password: 'demo123',
+                            role: 'industrialist',
+                            company: 'Dabur India R&D Labs',
+                            domain: 'ayush',
+                            skills: ['Phytomedicine R&D', 'Quality Assurance', 'HLPC Profiling']
+                        }
+                    ];
+
+                    this.courses = [
+                        {
+                            id: 1,
+                            title: 'Pharmacovigilance & Quality Control in AYUSH Drugs',
+                            author: 'Prof. (Dr.) V. K. Joshi',
+                            domain: 'ayush',
+                            level: 'Advanced',
+                            nepCredits: 4,
+                            deadline: '2026-09-30',
+                            description: 'Comprehensive analysis of Ayurvedic formulations, TLC/HPLC methods, and WHO Good Agricultural and Collection Practices (GACP).',
+                            quiz: [
+                                { q: 'Which statutory body regulates ASU (Ayurveda, Siddha, Unani) drugs quality in India?', options: ['Pharmacopoeia Commission for Indian Medicine (PCIM&H)', 'TRAI', 'SEBI'], answer: 0 },
+                                { q: 'What is the minimum marker content requirement for high-potency Curcumin extracts in standard AYUSH guidelines?', options: ['95%', '40%', '10%'], answer: 0 }
+                            ],
+                            certified: true
+                        },
+                        {
+                            id: 2,
+                            title: 'Edge AI & Cloud Telemedicine Architecture',
+                            author: 'Dr. M. S. Swaminathan Tech Cell',
+                            domain: 'engineering',
+                            level: 'Intermediate',
+                            nepCredits: 3,
+                            deadline: '2026-10-15',
+                            description: 'Design distributed architectures for remote health monitoring, IoT sensor integration, and microservices.',
+                            quiz: [
+                                { q: 'Which protocol is most optimal for constrained bandwidth IoT vitals sensors?', options: ['MQTT', 'HTTP/1.1 Polling', 'SOAP XML'], answer: 0 }
+                            ],
+                            certified: true
+                        }
+                    ];
+
+                    this.internships = [
+                        {
+                            id: 1,
+                            company: 'Dabur India R&D Labs',
+                            title: 'Ayush Phytopharmacy & Formulation Intern',
+                            domain: 'ayush',
+                            skills: ['Herb Standardization', 'HPLC/GC-MS', 'AYUSH GCP'],
+                            duration: '6 Months',
+                            stipend: '₹30,000 / month',
+                            deadline: '2026-09-20',
+                            nepApproved: true,
+                            postedBy: 3
+                        },
+                        {
+                            id: 2,
+                            company: 'CognitiveBio Analytics',
+                            title: 'Full Stack Health-Informatics Engineer Intern',
+                            domain: 'engineering',
+                            skills: ['React', 'Python', 'FastAPI', 'AWS Bedrock'],
+                            duration: '3 Months',
+                            stipend: '₹35,000 / month',
+                            deadline: '2026-09-25',
+                            nepApproved: true,
+                            postedBy: 3
+                        }
+                    ];
+
+                    this.placements = [
+                        {
+                            id: 1,
+                            company: 'Patanjali & Himalaya Health Sciences',
+                            title: 'Senior AYUSH Regulatory & Research Associate',
+                            domain: 'ayush',
+                            skills: ['AYUSH Grid', 'Standardization', 'Clinical Trials'],
+                            salary: '₹14.5 LPA',
+                            location: 'Haridwar / New Delhi',
+                            postedBy: 3
+                        },
+                        {
+                            id: 2,
+                            company: 'AIIMS & Tech-India Consortium',
+                            title: 'AI Clinical Decision Support Engineer',
+                            domain: 'engineering',
+                            skills: ['Python', 'Deep Learning', 'DICOM Protocols'],
+                            salary: '₹18 LPA',
+                            location: 'Pune / Bengaluru',
+                            postedBy: 3
+                        }
+                    ];
+                }
+            }
+        };
+
+        // ==================== ADVANCED AI ASSESSMENT ENGINE ====================
+        const AIEngine = {
+            questionBank: {
+                ayush: [
+                    { q: 'Explain the methodology of standardization of raw herbs using Pharmacopoeial laboratory standards (PLIM).', focus: 'Quality Control' },
+                    { q: 'How would you design a double-blind, randomized controlled trial for an Ayurvedic formulation adhering to AYUSH GCP?', focus: 'Clinical Research' },
+                    { q: 'How can AI and machine learning be integrated into Prakriti or Nadi Pariksha diagnostic telemetry?', focus: 'Integrative Tech' }
+                ],
+                engineering: [
+                    { q: 'How would you architect a microservices system handling 100k requests/sec with low latency and high fault tolerance?', focus: 'System Design' },
+                    { q: 'What is your strategy for optimizing vector embedding retrieval speed in LLM-based RAG pipelines?', focus: 'AI & Data Eng' },
+                    { q: 'Demonstrate dynamic memory safety and concurrency control in modern C++ / Rust applications.', focus: 'Core Systems' }
+                ],
+                management: [
+                    { q: 'Formulate a GTM (Go-To-Market) strategy for bringing AYUSH wellness products to European regulatory markets.', focus: 'Global Strategy' },
+                    { q: 'How do you conduct unit economic analysis and LTV/CAC optimization for ed-tech platforms?', focus: 'Financial Analysis' }
+                ],
+                law: [
+                    { q: 'Examine patentability conflicts under Section 3(p) of the Indian Patents Act concerning traditional knowledge (TKDL).', focus: 'IPR & Traditional Knowledge' },
+                    { q: 'What are the legal compliance standards for health data privacy under the Digital Personal Data Protection (DPDP) Act 2023?', focus: 'Data Privacy' }
+                ]
+            },
+
+            evaluateSubmission: function(payload) {
+                const { domain, skills, projects, research, github } = payload;
+                let score = 40;
+                let repoRemarks = "No GitHub repository provided. Add a repository to earn code quality credits.";
+                let researchWeight = "Baseline Academic Background";
+
+                if (skills.length > 0) score += Math.min(skills.length * 7, 25);
+                if (projects.length > 0) score += Math.min(projects.length * 10, 20);
+                
+                if (github && github.includes('github.com')) {
+                    score += 8;
+                    repoRemarks = "Verified Git Repo: Clean modular layout, active commit history, unit tests detected.";
+                }
+
+                if (research && research.length > 5) {
+                    score += 7;
+                    researchWeight = "UGC-CARE / Scopus / AYUSH Research indexed footprint confirmed.";
+                }
+
+                score = Math.min(score, 98);
+
+                let level = 'Beginner (NHEQF Level 4.5)';
+                if (score >= 80) level = 'Advanced (NHEQF Level 7)';
+                else if (score >= 60) level = 'Intermediate (NHEQF Level 5.5)';
+
+                const gapDict = {
+                    ayush: ['AYUSH Grid API Integration', 'HPLC Chromatographic Profiling', 'WHO-GACP Protocols'],
+                    engineering: ['Distributed Consensus (Raft/Paxos)', 'Vector DB indexing (HNSW)', 'CI/CD pipeline hardening'],
+                    management: ['Cross-border Compliance', 'ESG Metric Modelling'],
+                    law: ['DPDP 2023 Audit Systems', 'WIPO TKDL Cross-Border Filings']
+                };
+
+                const currentGaps = gapDict[domain] || ['Foundational Domain Best Practices'];
+                const roadmap = this.generateRoadmap(domain, level);
+
+                return {
+                    score: score,
+                    level: level,
+                    repoAudit: repoRemarks,
+                    researchWeight: researchWeight,
+                    gaps: currentGaps,
+                    suggestions: [
+                        `Enroll in ${domain.toUpperCase()} NEP-accredited Capstone certification`,
+                        `Publish an open-source technical whitepaper or repository demonstrating end-to-end implementation`,
+                        `Link APAAR ID to Academic Bank of Credits (ABC) to transfer course completion points`
+                    ],
+                    roadmap: roadmap
+                };
+            },
+
+            generateRoadmap: function(domain, level) {
+                if (domain === 'ayush') {
+                    return [
+                        { phase: 'Phase 1 (Month 1-2)', title: 'Foundations & Pharmacopoeial Standards', desc: 'Study Ayurvedic Pharmacopoeia of India (API), PLIM monographs, and raw material validation.' },
+                        { phase: 'Phase 2 (Month 3-4)', title: 'Bio-Analytical & Clinical Protocols', desc: 'Master HPLC/HPTLC fingerprinting, AYUSH GCP, and electronic health record formats on AYUSH Grid.' },
+                        { phase: 'Phase 3 (Month 5-6)', title: 'Industry Integration & Clinical Trials', desc: 'Undertake real-time clinical data compilation, stability testing, and Ministry compliance audits.' }
+                    ];
+                }
+                return [
+                    { phase: 'Phase 1 (Month 1-2)', title: 'Core Competency & System Mastery', desc: 'Deep dive into data structures, scalable API design, and modular repository patterns.' },
+                    { phase: 'Phase 2 (Month 3-4)', title: 'Cloud-Native & Distributed AI', desc: 'Deploy cloud microservices, vector similarity search, and automated test pipelines.' },
+                    { phase: 'Phase 3 (Month 5-6)', title: 'Production Capstone & Industry Placement', desc: 'Complete enterprise-grade projects with telemetry, monitoring, and live deployments.' }
+                ];
+            }
+        };
+
+        // ==================== APPLICATION CONTROLLER & RENDERER ====================
+        const App = {
+            init: function() {
+                DB.currentUser = null;
+                DB.seed();
+                GlobalBackgroundEngine.init();
+                this.render();
+            },
+
+            render: function() {
+                const app = document.getElementById('app');
+                if (DB.currentUser) {
+                    this.renderDashboard(app);
+                } else {
+                    this.renderLanding(app);
+                }
+            },
+
+            getCloseButton: function(onClickHandler = "App.render()") {
+                return `
+                    <button onclick="${onClickHandler}" aria-label="Close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition shadow-sm z-20">
+                        <i class="fa-solid fa-xmark text-base"></i>
+                    </button>
+                `;
+            },
+
+            getLogoHtml: function(size = 'normal') {
+                const iconSize = size === 'large' ? 'w-12 h-12' : 'w-10 h-10';
+                const textClass = size === 'large' ? 'text-3xl' : 'text-2xl';
+                return `
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="App.init()">
+                        <div class="${iconSize} bg-gradient-to-tr from-blue-700 via-emerald-600 to-amber-500 rounded-xl p-0.5 shadow-md flex items-center justify-center">
+                            <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+                                <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                                    <path d="M4 21c4-2 12-2 16 0"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="${textClass} font-extrabold tracking-tight text-slate-900 font-brand">Skill<span class="text-blue-700">Bridge</span></span>
+                            <span class="block text-[9px] uppercase tracking-widest text-slate-500 font-bold font-sans">National Academia-Industry Portal • NEP 2020</span>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderGovBanner: function() {
+                return `
+                    <div class="bg-slate-900/90 backdrop-blur-md text-slate-300 text-xs border-b border-slate-800 py-1.5 px-4 sm:px-8 flex flex-wrap justify-between items-center z-50 relative">
+                        <div class="flex items-center space-x-3">
+                            <span class="inline-block w-3 h-2 badge-tricolor rounded-sm shadow-sm"></span>
+                            <span class="font-medium text-slate-200">Government of India Collaboration Initiative</span>
+                            <span class="hidden md:inline text-slate-600">|</span>
+                            <span class="hidden md:inline text-amber-400 font-medium"><i class="fa-solid fa-leaf mr-1"></i> Ministry of AYUSH & AICTE Aligned</span>
+                        </div>
+                        <div class="flex items-center space-x-4 text-[11px]">
+                            <span class="bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded font-mono font-semibold">
+                                <i class="fa-solid fa-id-card mr-1"></i> APAAR / ABC Credit Verified
+                            </span>
+                            <span class="text-slate-400">NHEQF 2026 Standards</span>
+                        </div>
+                    </div>
+                `;
+            },
+
+            toggleFaq: function(index) {
+                const answer = document.getElementById(`faq-ans-${index}`);
+                const icon = document.getElementById(`faq-icon-${index}`);
+                if (answer) {
+                    const isHidden = answer.classList.contains('hidden');
+                    if (isHidden) {
+                        answer.classList.remove('hidden');
+                        icon.classList.replace('fa-plus', 'fa-minus');
+                    } else {
+                        answer.classList.add('hidden');
+                        icon.classList.replace('fa-minus', 'fa-plus');
+                    }
+                }
+            },
+
+            renderLanding: function(app) {
+                const faqs = [
+                    {
+                        q: "What is SkillBridge and how does it align with NEP 2020?",
+                        a: "SkillBridge is a national academia-industry collaboration platform that bridges skill gaps between educational institutions and industrial standards. It fully integrates with the National Education Policy (NEP 2020) and Academic Bank of Credits (ABC) to enable seamlessly transferrable academic credits."
+                    },
+                    {
+                        q: "How does the APAAR / ABC Student Credit System work?",
+                        a: "Every student profile is verified via their 12-digit APAAR ID. Upon completing accredited capstones or timed quizzes on SkillBridge, earned academic credits are directly posted to your official Academic Bank of Credits ledger."
+                    },
+                    {
+                        q: "How does the automated AI Skill Assessment evaluate candidates?",
+                        a: "The built-in AI engine analyzes candidate-submitted GitHub repositories, research DOI publications, and technical project experience against industry standards (NHEQF Level 7). It maps domain-specific competencies and suggests personalized learning pathways."
+                    },
+                    {
+                        q: "How can Industry Recruiters and R&D facilities participate?",
+                        a: "Industries can post skill-mapped internships and placements, browse verified student portfolios with authenticated APAAR credentials, and directly invite high-scoring candidates for technical interviews."
+                    }
+                ];
+
+                app.innerHTML = `
+                    <div class="min-h-screen text-slate-800 flex flex-col justify-between">
+                        ${this.renderGovBanner()}
+                        <nav class="border-b border-slate-200/60 bg-white/80 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+                                ${this.getLogoHtml()}
+                                <div class="hidden md:flex items-center space-x-3 text-base font-extrabold text-slate-900">
+                                    <a href="#stakeholders" class="px-4 py-2 rounded-xl bg-blue-50/90 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white transition shadow-sm">Stakeholders</a>
+                                    <a href="#impact" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">National Impact</a>
+                                    <a href="#pipeline" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">AI Architecture</a>
+                                    <a href="#faq" class="px-4 py-2 rounded-xl bg-slate-100/90 text-slate-800 hover:bg-blue-600 hover:text-white transition shadow-sm">FAQ</a>
+                                </div>
+                            </div>
+                        </nav>
+
+                        <!-- MAIN HERO SECTION -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 text-center z-10 relative">
+                            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-6 text-slate-900 font-brand">
+                                Unified Skill Validation & <br>
+                                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-600">
+                                    Academic Gap Intelligence Platform
+                                </span>
+                            </h1>
+                            
+                            <p class="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+                                Connecting Students, Enterprises, and Educational Institutions with real-time AI skill mapping, NPTEL/AYUSH credit transfer, and official qualification records.
+                            </p>
+                        </div>
+
+                        <!-- SECTION: DESIGNED FOR KEY STAKEHOLDERS -->
+                        <div id="stakeholders" class="scroll-mt-20 pb-16 px-4 sm:px-6 lg:px-8 z-10 relative">
+                            <div class="max-w-6xl mx-auto text-center">
+                                <span class="text-xs font-bold uppercase tracking-widest text-blue-800 inline-block mb-8 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200">
+                                    DESIGNED FOR KEY STAKEHOLDERS
+                                </span>
+
+                                <div class="grid md:grid-cols-3 gap-6 text-left">
+                                    <!-- STUDENTS & RESEARCHERS -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 text-lg mb-6">
+                                                <i class="fa-solid fa-graduation-cap"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Students & Researchers</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Complete automated AI assessment across GitHub repos, research papers, and technical tests. Accumulate NEP 2020 APAAR credits.
+                                            </p>
+                                        </div>
+                                        <button onclick="App.showLogin('student')" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Student Login / Register &rarr;
+                                        </button>
+                                    </div>
+
+                                    <!-- ACADEMICIANS & FACULTY -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 text-lg mb-6">
+                                                <i class="fa-solid fa-notes-medical"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Academicians & Faculty</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Publish deadline-based certified courses, launch timed quizzes, and participate in FDPs & AYUSH clinical research.
+                                            </p>
+                                        </div>
+                                        <button onclick="App.showLogin('academician')" class="w-full py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Faculty Portal &rarr;
+                                        </button>
+                                    </div>
+
+                                    <!-- INDUSTRY & R&D LABS -->
+                                    <div class="bg-white border border-slate-200 rounded-3xl p-8 card-hover flex flex-col justify-between shadow-sm">
+                                        <div>
+                                            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 text-lg mb-6">
+                                                <i class="fa-solid fa-briefcase"></i>
+                                            </div>
+                                            <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Industry & R&D Labs</h3>
+                                            <p class="text-slate-600 text-xs leading-relaxed mb-8">
+                                                Post skill-mapped internships and placements. Directly review verified candidate scores and APAAR credit portfolios.
+                                            </p>
+                                        </div>
+                                        <button onclick="App.showLogin('industrialist')" class="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-sm text-center">
+                                            Industry Access &rarr;
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REMAINING SECTIONS DOWN BELOW -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center z-10 relative">
+
+                            <!-- SCROLL SECTION 1: LIVE IMPACT STATS -->
+                            <div id="impact" class="scroll-mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto mb-20">
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-blue-700 font-brand">1.2M+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">APAAR IDs Linked</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Real-time ABC Verification</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-slate-900 font-brand">450+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">Industry Partners</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Dabur, Patanjali, AIIMS & Tech</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-emerald-700 font-brand">98.4%</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">AI Match Accuracy</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">NHEQF Level 7 Standards</div>
+                                </div>
+                                <div class="glass-card p-5 rounded-2xl shadow-sm text-center border border-slate-200">
+                                    <div class="text-3xl font-extrabold text-amber-600 font-brand">350k+</div>
+                                    <div class="text-xs text-slate-600 font-bold mt-1">NEP Credits Awarded</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">AYUSH & NPTEL Modules</div>
+                                </div>
+                            </div>
+
+                            <!-- SCROLL SECTION 2: AI PIPELINE & ARCHITECTURE -->
+                            <div id="pipeline" class="scroll-mt-20 max-w-5xl mx-auto text-left mb-24 glass-card p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                <div class="text-center max-w-xl mx-auto mb-10">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-700 block mb-1">SIH Architecture Overview</span>
+                                    <h2 class="text-2xl font-bold text-slate-900">How SkillBridge AI Intelligence Operates</h2>
+                                    <p class="text-xs text-slate-500 mt-1">Automated multi-stage assessment from code repositories to government credit ledgers.</p>
+                                </div>
+
+                                <div class="grid md:grid-cols-3 gap-6 relative">
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs mb-3">01</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">Telemetry & Code Ingestion</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Extracts live commit signals from GitHub, checks unit test coverage, and verifies Scopus/UGC research DOIs.</p>
+                                    </div>
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs mb-3">02</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">AI Skill-Gap Engine</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Compares candidate profile with real-time enterprise job requirements (e.g. AYUSH GCP, Microservices, HPLC).</p>
+                                    </div>
+                                    <div class="p-5 bg-white/80 rounded-xl border border-slate-200 relative">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-xs mb-3">03</div>
+                                        <h4 class="font-bold text-slate-800 text-sm mb-1">APAAR / ABC Credit Posting</h4>
+                                        <p class="text-xs text-slate-600 leading-relaxed">Automatically transfers earned credits upon completing timed quizzes to national student records.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SCROLL SECTION 3: TESTIMONIALS & RECOGNITION -->
+                            <div class="max-w-5xl mx-auto text-left mb-20">
+                                <div class="text-center mb-8">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-amber-600 block mb-1">Ecosystem Feedback</span>
+                                    <h2 class="text-2xl font-bold text-slate-900">Trusted Across Institutions & Enterprises</h2>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div class="glass-card p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <div class="flex items-center space-x-3 mb-3">
+                                            <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">AS</div>
+                                            <div>
+                                                <h4 class="font-bold text-xs text-slate-800">Aaditya Sharma</h4>
+                                                <p class="text-[10px] text-slate-500">AYUSH Researcher • APAAR 8942-7712-4401</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-slate-600 italic">"The AI skill gap engine correctly identified my gap in AYUSH Good Clinical Practices and helped me bridge it. I was directly shortlisted for an R&D internship!"</p>
+                                    </div>
+                                    <div class="glass-card p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <div class="flex items-center space-x-3 mb-3">
+                                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-sm">VJ</div>
+                                            <div>
+                                                <h4 class="font-bold text-xs text-slate-800">Prof. (Dr.) V. K. Joshi</h4>
+                                                <p class="text-[10px] text-slate-500">National Institute of Ayurveda</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-slate-600 italic">"Publishing NEP-accredited quizzes and seeing credits automatically transfer to students' ABC accounts in real time is a huge step forward for academia."</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FAQ SECTION -->
+                            <div id="faq" class="scroll-mt-20 max-w-4xl mx-auto text-left border-t border-slate-200/80 pt-16">
+                                <div class="text-center mb-10">
+                                    <span class="text-xs font-bold uppercase tracking-widest text-blue-800 block mb-1">Got Questions?</span>
+                                    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Frequently Asked Questions</h2>
+                                    <p class="text-xs text-slate-500 mt-1">Everything you need to know about APAAR credits, AI evaluation, and governance.</p>
+                                </div>
+
+                                <div class="space-y-3">
+                                    ${faqs.map((faq, idx) => `
+                                        <div class="glass-card rounded-xl border border-slate-200/80 overflow-hidden shadow-sm transition">
+                                            <button onclick="App.toggleFaq(${idx})" class="w-full px-6 py-4 text-left text-sm font-bold text-slate-800 flex justify-between items-center focus:outline-none hover:text-blue-700">
+                                                <span>${faq.q}</span>
+                                                <i id="faq-icon-${idx}" class="fa-solid fa-plus text-slate-400 text-xs ml-4"></i>
+                                            </button>
+                                            <div id="faq-ans-${idx}" class="hidden px-6 pb-4 text-xs text-slate-600 leading-relaxed border-t border-slate-100/60 pt-3">
+                                                ${faq.a}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer class="bg-slate-950/90 backdrop-blur-md border-t border-slate-800 text-slate-400 text-xs py-4 text-center z-10">
+                            SkillBridge • Ministry of AYUSH, AICTE & NEP-2020 Academic Bank of Credits (ABC) Aligned Ecosystem
+                        </footer>
+                    </div>
+                `;
+            },
+
+            showLogin: function(role) {
+                const app = document.getElementById('app');
+                const roleConfig = {
+                    student: { title: 'Student & Researcher Login', icon: 'fa-user-graduate', color: 'blue', demo: 'student@demo.com' },
+                    academician: { title: 'Academician & Faculty Portal', icon: 'fa-chalkboard-user', color: 'emerald', demo: 'academic@demo.com' },
+                    industrialist: { title: 'Industry & Recruiter Gateway', icon: 'fa-building', color: 'amber', demo: 'industry@demo.com' }
+                }[role];
+
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
+                        <div class="mb-6">${this.getLogoHtml('large')}</div>
+                        <div class="glass-card rounded-2xl shadow-xl p-8 w-full max-w-md border border-slate-200 z-10 relative">
+                            ${this.getCloseButton('App.init()')}
+                            <div class="text-center mb-6 pr-4">
+                                <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-${roleConfig.color}-50/80 text-${roleConfig.color}-600 flex items-center justify-center text-2xl border border-${roleConfig.color}-200">
+                                    <i class="fa-solid ${roleConfig.icon}"></i>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-800">${roleConfig.title}</h2>
+                                <p class="text-xs text-slate-500 mt-1">Unified Sign-On with APAAR / Institutional Credentials</p>
+                            </div>
+
+                            <form onsubmit="App.handleLogin(event, '${role}')" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email ID</label>
+                                    <input type="email" id="loginEmail" required class="w-full px-4 py-2.5 text-sm border border-slate-300/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white/70" placeholder="you@domain.edu.in">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Password</label>
+                                    <input type="password" id="loginPassword" required class="w-full px-4 py-2.5 text-sm border border-slate-300/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white/70" placeholder="••••••••">
+                                </div>
+                                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-md">
+                                    Authenticate & Enter Portal
+                                </button>
+                            </form>
+
+                            <div class="mt-4 p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-xs text-slate-600 flex justify-between items-center">
+                                <span><strong>Demo Access:</strong> ${roleConfig.demo}</span>
+                                <button onclick="document.getElementById('loginEmail').value='${roleConfig.demo}'; document.getElementById('loginPassword').value='demo123';" class="text-blue-600 underline font-semibold">Auto-fill</button>
+                            </div>
+
+                            <div class="mt-6 flex justify-start text-xs text-slate-500">
+                                <button onclick="App.showRegister('${role}')" class="text-blue-600 font-semibold hover:underline">New here? Register</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            showRegister: function(role) {
+                const app = document.getElementById('app');
+                let extraFields = '';
+
+                if (role === 'student') {
+                    extraFields = `
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">APAAR / ABC ID (12 Digits)</label>
+                            <input type="text" id="regApaar" required placeholder="e.g. 8942-7712-4401" class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                    `;
+                } else if (role === 'academician') {
+                    extraFields = `
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Affiliated University / College</label>
+                            <input type="text" id="regInstitution" required placeholder="e.g. National Institute of Ayurveda / PICT" class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    `;
+                } else {
+                    extraFields = `
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Company / R&D Facility</label>
+                            <input type="text" id="regCompany" required placeholder="e.g. Dabur Healthcare Labs / TechCorp" class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                    `;
+                }
+
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
+                        <div class="mb-4">${this.getLogoHtml('large')}</div>
+                        <div class="glass-card rounded-2xl shadow-xl p-8 w-full max-w-lg border border-slate-200 z-10 relative">
+                            ${this.getCloseButton('App.init()')}
+                            <h2 class="text-xl font-bold text-slate-800 mb-1 pr-6">Register New Account</h2>
+                            <p class="text-xs text-slate-500 mb-6">Connect to the National Collaborative Skill Database</p>
+
+                            <form onsubmit="App.handleRegister(event, '${role}')" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Full Name</label>
+                                    <input type="text" id="regName" required class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Dr. / Mr. / Ms. Full Name">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email Address</label>
+                                    <input type="email" id="regEmail" required class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="name@institution.ac.in">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Password</label>
+                                    <input type="password" id="regPassword" required minlength="6" class="w-full px-4 py-2 text-sm border border-slate-300/80 bg-white/70 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Min 6 characters">
+                                </div>
+                                ${extraFields}
+                                <button type="submit" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-md">
+                                    Create Profile & Proceed
+                                </button>
+                            </form>
+                            <div class="mt-4 text-center">
+                                <button onclick="App.showLogin('${role}')" class="text-xs text-blue-600 font-semibold hover:underline">Already registered? Log In</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            handleLogin: function(e, role) {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+
+                const user = DB.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password && u.role === role);
+                if (user) {
+                    DB.currentUser = user;
+                    this.showToast(`Welcome back, ${user.name}!`, 'success');
+                    this.render();
+                } else {
+                    this.showToast('Invalid credentials. Please verify your role and email.', 'error');
+                }
+            },
+
+            handleRegister: function(e, role) {
+                e.preventDefault();
+                const name = document.getElementById('regName').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const password = document.getElementById('regPassword').value;
+
+                if (DB.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                    this.showToast('This email is already registered!', 'error');
+                    return;
+                }
+
+                const newUser = {
+                    id: DB.users.length + 1,
+                    name,
+                    email,
+                    password,
+                    role,
+                    skills: [],
+                    projects: [],
+                    domain: '',
+                    apaarId: document.getElementById('regApaar') ? document.getElementById('regApaar').value : null,
+                    apaarVerified: true,
+                    institution: document.getElementById('regInstitution') ? document.getElementById('regInstitution').value : null,
+                    company: document.getElementById('regCompany') ? document.getElementById('regCompany').value : null,
+                    abcCredits: 0
+                };
+
+                DB.users.push(newUser);
+                DB.currentUser = newUser;
+                this.showToast('Account successfully created!', 'success');
+                this.render();
+            },
+
+            logout: function() {
+                DB.currentUser = null;
+                this.showToast('Logged out successfully.', 'info');
+                this.init();
+            },
+
+            renderDashboard: function(app) {
+                const user = DB.currentUser;
+                let dashboardHtml = '';
+
+                if (user.role === 'student') {
+                    dashboardHtml = this.renderStudentView(user);
+                } else if (user.role === 'academician') {
+                    dashboardHtml = this.renderAcademicianView(user);
+                } else {
+                    dashboardHtml = this.renderIndustrialistView(user);
+                }
+
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col bg-transparent">
+                        ${this.renderGovBanner()}
+                        <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white sticky top-0 z-30">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+                                ${this.getLogoHtml()}
+                                <div class="flex items-center space-x-4 text-xs">
+                                    <div class="text-right hidden sm:block">
+                                        <p class="font-bold text-slate-100">${user.name}</p>
+                                        <p class="text-slate-400 capitalize">${user.role} ${user.domain ? '• ' + user.domain.toUpperCase() : ''}</p>
+                                    </div>
+                                    <button onclick="App.logout()" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 rounded-lg text-white font-medium transition">
+                                        <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </header>
+                        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full z-10">
+                            ${dashboardHtml}
+                        </main>
+                        <footer class="bg-slate-950/90 backdrop-blur-md border-t border-slate-800 text-slate-400 text-xs py-4 text-center z-10">
+                            SkillBridge • Ministry of AYUSH, AICTE & NEP-2020 Academic Bank of Credits (ABC) Aligned Ecosystem
+                        </footer>
+                    </div>
+                `;
+            },
+
+            renderStudentView: function(user) {
+                if (!user.domain || !user.assessment) {
+                    return this.renderStudentOnboardingForm(user);
+                }
+
+                const domainCourses = DB.courses.filter(c => c.domain === user.domain || c.domain === 'engineering');
+                const domainInternships = DB.internships.filter(i => i.domain === user.domain || i.domain === 'engineering');
+                const domainPlacements = DB.placements.filter(p => p.domain === user.domain || p.domain === 'engineering');
+
+                return `
+                    <div class="space-y-6">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-14 h-14 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center text-xl font-bold border-2 border-amber-400">
+                                    ${user.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h2 class="text-xl font-bold text-slate-800">${user.name}</h2>
+                                        <span class="bg-emerald-100/90 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-300">
+                                            <i class="fa-solid fa-circle-check text-emerald-600"></i> APAAR VERIFIED
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 font-mono">APAAR ID: ${user.apaarId || '8942-7712-4401'} • Domain: <strong class="text-slate-700 uppercase">${user.domain}</strong></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <div class="bg-blue-50/80 border border-blue-200 px-3 py-2 rounded-lg text-center">
+                                    <span class="text-[10px] uppercase font-bold text-blue-600 block">NEP 2020 Credits</span>
+                                    <span class="text-lg font-bold text-blue-950">${user.abcCredits || 24} ABC Pts</span>
+                                </div>
+                                <div class="bg-emerald-50/80 border border-emerald-200 px-3 py-2 rounded-lg text-center">
+                                    <span class="text-[10px] uppercase font-bold text-emerald-600 block">AI Competency</span>
+                                    <span class="text-lg font-bold text-emerald-950">${user.assessment.score}% (${user.level})</span>
+                                </div>
+                                <button onclick="App.showRetakeAssessment()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition self-center">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i> Retake AI Assessment
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2 glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                    <h3 class="font-bold text-slate-800 flex items-center text-sm">
+                                        <i class="fa-solid fa-microchip text-blue-600 mr-2"></i> AI Skill-Gap Analysis & Code/Research Audit
+                                    </h3>
+                                    <span class="text-xs font-semibold text-emerald-600 bg-emerald-50/80 px-2.5 py-1 rounded-full border border-emerald-200">
+                                        Score: ${user.assessment.score} / 100
+                                    </span>
+                                </div>
+
+                                <div class="grid sm:grid-cols-2 gap-4 text-xs">
+                                    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
+                                        <span class="font-bold text-slate-700 block mb-1"><i class="fa-brands fa-github text-slate-800 mr-1"></i> Git Repository Telemetry:</span>
+                                        <p class="text-slate-600">${user.assessment.repoAudit}</p>
+                                    </div>
+                                    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
+                                        <span class="font-bold text-slate-700 block mb-1"><i class="fa-solid fa-file-lines text-emerald-700 mr-1"></i> Research & Publications:</span>
+                                        <p class="text-slate-600">${user.assessment.researchWeight}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Identified Skill Gaps (Requires Upskilling):</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${user.assessment.gaps.map(g => `<span class="bg-rose-50/80 text-rose-700 border border-rose-200 px-2.5 py-1 rounded text-xs font-medium"><i class="fa-solid fa-triangle-exclamation mr-1 text-rose-500"></i>${g}</span>`).join('')}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">AI Suggested Upskilling Workflows:</h4>
+                                    <ul class="space-y-1.5 text-xs text-slate-700">
+                                        ${user.assessment.suggestions.map(s => `<li class="flex items-center"><i class="fa-solid fa-arrow-trend-up text-emerald-600 mr-2"></i>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="bg-gradient-to-br from-slate-900/95 to-slate-800/95 text-white rounded-xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-md">
+                                <div>
+                                    <h3 class="text-sm font-bold text-amber-400 flex items-center mb-4">
+                                        <i class="fa-solid fa-route mr-2"></i> NEP-2020 Fresher Career Roadmap
+                                    </h3>
+                                    <div class="space-y-4">
+                                        ${(user.assessment.roadmap || []).map((step) => `
+                                            <div class="border-l-2 border-amber-400/50 pl-3 relative">
+                                                <span class="text-[10px] font-bold text-amber-300 block uppercase">${step.phase}</span>
+                                                <h5 class="text-xs font-bold text-white">${step.title}</h5>
+                                                <p class="text-[11px] text-slate-300 mt-0.5">${step.desc}</p>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-slate-700 text-[11px] text-slate-400">
+                                    Aligned with National Higher Education Qualifications Framework (NHEQF Level 7).
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                            <div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-book-open text-blue-600 mr-2"></i> Deadline-Based Accredited Courses</h3>
+                                        <p class="text-xs text-slate-500">Earn direct Academic Bank of Credits (ABC) upon completion.</p>
+                                    </div>
+                                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">${domainCourses.length} Available</span>
+                                </div>
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    ${domainCourses.map(c => `
+                                        <div class="border border-slate-200/80 rounded-xl p-4 card-hover bg-white/70 flex flex-col justify-between">
+                                            <div>
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${c.domain}</span>
+                                                    <span class="text-rose-600 text-xs font-bold"><i class="fa-regular fa-clock mr-1"></i> Deadline: ${c.deadline}</span>
+                                                </div>
+                                                <h4 class="font-bold text-slate-800 text-sm mb-1">${c.title}</h4>
+                                                <p class="text-xs text-slate-500 mb-2">Instructor: ${c.author} • <strong class="text-emerald-700">${c.nepCredits} NEP Credits</strong></p>
+                                                <p class="text-xs text-slate-600 mb-3">${c.description}</p>
+                                            </div>
+                                            <div class="pt-3 border-t border-slate-200 flex justify-between items-center">
+                                                <span class="text-xs font-semibold text-slate-500">${c.quiz ? c.quiz.length : 0} Interactive Quiz Questions</span>
+                                                <button onclick="App.startCourseQuiz(${c.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                                                    Attempt Quiz & Certify &rarr;
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-200">
+
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-briefcase text-amber-600 mr-2"></i> Skill-Matched Internships</h3>
+                                    <div class="space-y-3">
+                                        ${domainInternships.map(i => `
+                                            <div class="border border-slate-200/80 rounded-lg p-3 bg-white/70 card-hover">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 class="font-bold text-slate-800 text-xs">${i.title}</h4>
+                                                        <p class="text-[11px] text-slate-500">${i.company}</p>
+                                                    </div>
+                                                    <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">${i.stipend}</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-1.5 my-2">
+                                                    ${i.skills.map(s => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
+                                                </div>
+                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                                    <span class="text-slate-400">Duration: ${i.duration}</span>
+                                                    <button onclick="App.applyOpportunity('Internship', '${i.title}')" class="text-blue-600 font-bold hover:underline">Apply with APAAR &rarr;</button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-award text-emerald-600 mr-2"></i> Verified Placements</h3>
+                                    <div class="space-y-3">
+                                        ${domainPlacements.map(p => `
+                                            <div class="border border-slate-200/80 rounded-lg p-3 bg-white/70 card-hover">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 class="font-bold text-slate-800 text-xs">${p.title}</h4>
+                                                        <p class="text-[11px] text-slate-500">${p.company} • ${p.location}</p>
+                                                    </div>
+                                                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">${p.salary}</span>
+                                                </div>
+                                                <div class="flex flex-wrap gap-1.5 my-2">
+                                                    ${p.skills.map(s => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
+                                                </div>
+                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                                    <span class="text-emerald-700 font-medium">Auto-Shortlist Eligible</span>
+                                                    <button onclick="App.applyOpportunity('Placement', '${p.title}')" class="text-emerald-700 font-bold hover:underline">Submit Portfolio &rarr;</button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderStudentOnboardingForm: function(user) {
+                return `
+                    <div class="max-w-3xl mx-auto glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
+                        ${this.getCloseButton('App.logout()')}
+                        <div class="text-center mb-6 pr-6">
+                            <span class="text-xs font-bold uppercase tracking-widest text-amber-600">Step 1 of 1: Skill Profiling & National Verification</span>
+                            <h2 class="text-2xl font-bold text-slate-800 mt-1">Complete Student Profile</h2>
+                            <p class="text-xs text-slate-500 mt-1">Select your specialized discipline, link your APAAR credentials, Git repositories, and research papers for automated AI evaluation.</p>
+                        </div>
+
+                        <form onsubmit="App.saveStudentProfile(event)" class="space-y-4">
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Academic / Medical Domain</label>
+                                    <select id="formDomain" required onchange="App.handleDomainChange(this.value)" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <option value="">-- Choose Domain --</option>
+                                        <option value="ayush" ${user.domain === 'ayush' ? 'selected' : ''}>Medical (AYUSH)</option>
+                                        <option value="engineering" ${user.domain === 'engineering' ? 'selected' : ''}>Engineering & Technology</option>
+                                        <option value="management" ${user.domain === 'management' ? 'selected' : ''}>Management & Commerce</option>
+                                        <option value="law" ${user.domain === 'law' ? 'selected' : ''}>Law & Governance</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Specialization / Sub-field</label>
+                                    <input type="text" id="formSubDomain" required placeholder="e.g. Dravyaguna & Clinical Trials" value="${user.subDomain || ''}" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">APAAR / ABC Student ID</label>
+                                    <input type="text" id="formApaar" required value="${user.apaarId || '8942-7712-4401'}" placeholder="XXXX-XXXX-XXXX" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">GitHub / Code Repository URL</label>
+                                    <input type="url" id="formGithub" value="${user.github || ''}" placeholder="https://github.com/your-username" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Research Publications / DOI (Comma Separated)</label>
+                                <input type="text" id="formResearch" value="${(user.researchPapers || []).join(', ')}" placeholder="e.g. Phytochemical Analysis of Ashwagandha (DOI: 10.1016/ayush.2025)" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Verified Technical Skills (Comma Separated)</label>
+                                <input type="text" id="formSkills" required value="${(user.skills || []).join(', ')}" placeholder="e.g. Herb Standardization, HPLC, Python, React" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Key Live Projects (Comma Separated)</label>
+                                <input type="text" id="formProjects" required value="${(user.projects || []).join(', ')}" placeholder="e.g. Automated Herbal Extraction QA Pipeline" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+
+                            <div class="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-3" id="dynamicQuestionContainer">
+                                <h4 class="text-xs font-bold uppercase text-slate-700 flex items-center">
+                                    <i class="fa-solid fa-robot text-amber-600 mr-1.5"></i> AI Adaptive Technical Inquiry:
+                                </h4>
+                                <p class="text-xs text-slate-600 italic" id="dynamicQuestionText">
+                                    Select your domain above to load the standardized competence inquiry.
+                                </p>
+                                <textarea id="formAnswer" rows="2" placeholder="Provide your technical rationale..." class="w-full p-2.5 text-xs border border-slate-300/80 bg-white/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl text-sm transition shadow-lg">
+                                Run Full AI Assessment & Map Credits &rarr;
+                            </button>
+                        </form>
+                    </div>
+                `;
+            },
+
+            handleDomainChange: function(domain) {
+                const questionText = document.getElementById('dynamicQuestionText');
+                if (!questionText) return;
+                const questions = AIEngine.questionBank[domain] || AIEngine.questionBank.engineering;
+                const q = questions[0];
+                questionText.innerHTML = `<strong>Focus [${q.focus}]:</strong> ${q.q}`;
+            },
+
+            showRetakeAssessment: function() {
+                const app = document.getElementById('app');
+                const user = DB.currentUser;
+                user.domain = '';
+                user.assessment = null;
+                this.renderDashboard(app);
+            },
+
+            saveStudentProfile: function(e) {
+                e.preventDefault();
+                const user = DB.currentUser;
+                const domain = document.getElementById('formDomain').value;
+                const subDomain = document.getElementById('formSubDomain').value;
+                const apaarId = document.getElementById('formApaar').value;
+                const github = document.getElementById('formGithub').value;
+                const research = document.getElementById('formResearch').value;
+                const skills = document.getElementById('formSkills').value.split(',').map(s => s.trim()).filter(Boolean);
+                const projects = document.getElementById('formProjects').value.split(',').map(p => p.trim()).filter(Boolean);
+
+                const evaluation = AIEngine.evaluateSubmission({
+                    domain,
+                    skills,
+                    projects,
+                    research,
+                    github
+                });
+
+                user.domain = domain;
+                user.subDomain = subDomain;
+                user.apaarId = apaarId;
+                user.apaarVerified = true;
+                user.github = github;
+                user.skills = skills;
+                user.projects = projects;
+                user.researchPapers = research ? [research] : [];
+                user.level = evaluation.level;
+                user.assessment = evaluation;
+                user.abcCredits = user.abcCredits || 24;
+
+                this.showToast('AI Assessment Complete! Skill Radar mapped.', 'success');
+                this.render();
+            },
+
+            startCourseQuiz: function(courseId) {
+                const course = DB.courses.find(c => c.id === courseId);
+                if (!course || !course.quiz || course.quiz.length === 0) {
+                    this.showToast('No active quiz questions for this course yet.', 'info');
+                    return;
+                }
+
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
+                        <div class="max-w-xl w-full glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
+                            ${this.getCloseButton('App.render()')}
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4 pr-6">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-amber-600">NEP-2020 Timed Credit Assessment</span>
+                                    <h3 class="text-lg font-bold text-slate-800">${course.title}</h3>
+                                </div>
+                                <span class="bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded border border-rose-200">
+                                    <i class="fa-solid fa-stopwatch mr-1"></i> Timed
+                                </span>
+                            </div>
+
+                            <form onsubmit="App.handleQuizSubmit(event, ${course.id})" class="space-y-4">
+                                ${course.quiz.map((q, idx) => `
+                                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200">
+                                        <p class="text-xs font-bold text-slate-800 mb-3">${idx + 1}. ${q.q}</p>
+                                        <div class="space-y-2">
+                                            ${q.options.map((opt, optIdx) => `
+                                                <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer p-2 rounded hover:bg-slate-200/60">
+                                                    <input type="radio" name="quiz_q_${idx}" value="${optIdx}" required class="text-blue-600">
+                                                    <span>${opt}</span>
+                                                </label>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+
+                                <div class="flex space-x-3 pt-2">
+                                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
+                                        Submit Assessment & Claim ${course.nepCredits} Credits
+                                    </button>
+                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs transition">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            },
+
+            handleQuizSubmit: function(e, courseId) {
+                e.preventDefault();
+                const course = DB.courses.find(c => c.id === courseId);
+                const user = DB.currentUser;
+
+                user.abcCredits = (user.abcCredits || 20) + (course.nepCredits || 3);
+                this.showToast(`Passed! +${course.nepCredits} NEP Credits added to APAAR ID.`, 'success');
+                this.render();
+            },
+
+            renderAcademicianView: function(user) {
+                const myCourses = DB.courses.filter(c => c.author.includes(user.name) || user.role === 'academician');
+
+                return `
+                    <div class="space-y-6">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">${user.name}</h2>
+                                <p class="text-xs text-slate-500 font-medium">Affiliation: ${user.institution || 'National Institute'} • Faculty ID: FAC-${user.id}902</p>
+                            </div>
+                            <button onclick="App.showCourseModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
+                                <i class="fa-solid fa-plus mr-1"></i> Publish Course & Quiz
+                            </button>
+                        </div>
+
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2 space-y-4">
+                                <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <h3 class="font-bold text-slate-800 text-sm mb-4"><i class="fa-solid fa-book-journal-whills text-emerald-600 mr-2"></i> Managed Curriculums</h3>
+                                    <div class="space-y-3">
+                                        ${myCourses.map(c => `
+                                            <div class="border border-slate-200/80 rounded-xl p-4 bg-white/70 flex flex-col justify-between">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${c.domain}</span>
+                                                        <h4 class="font-bold text-slate-800 text-sm mt-1">${c.title}</h4>
+                                                        <p class="text-xs text-slate-500">NEP Credits: <strong>${c.nepCredits}</strong> • Cutoff: <strong class="text-rose-600">${c.deadline}</strong></p>
+                                                    </div>
+                                                    <button onclick="App.deleteCourse(${c.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+                                                </div>
+                                                <div class="mt-3 pt-2 border-t border-slate-200 flex justify-between items-center text-xs text-slate-600">
+                                                    <span>${c.quiz ? c.quiz.length : 0} Questions</span>
+                                                    <span class="text-emerald-700 font-semibold">Active</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
+                                    <h3 class="font-bold text-slate-800 text-sm mb-3"><i class="fa-solid fa-handshake-angle text-blue-600 mr-1.5"></i> Collaborative Opportunities</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Research solicitations from pharmaceutical and tech sectors.</p>
+                                    <div class="space-y-2.5">
+                                        <div class="p-3 bg-blue-50/80 border border-blue-200 rounded-lg text-xs">
+                                            <span class="font-bold text-blue-900 block">Dabur AYUSH Drug Standardizer</span>
+                                            <p class="text-slate-600 mt-0.5">Seeking faculty co-PI for Phytochemical testing.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            showCourseModal: function() {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
+                        <div class="max-w-2xl w-full glass-card rounded-2xl shadow-2xl border border-slate-200 p-8 relative">
+                            ${this.getCloseButton('App.render()')}
+                            <h2 class="text-xl font-bold text-slate-800 mb-1 pr-6">Create Course & Timed Quiz</h2>
+                            <p class="text-xs text-slate-500 mb-4">Set curriculum description and credit weight.</p>
+
+                            <form onsubmit="App.saveCourse(event)" class="space-y-3 text-xs">
+                                <div>
+                                    <label class="block font-bold uppercase text-slate-600 mb-1">Course Title</label>
+                                    <input type="text" id="newCourseTitle" required class="w-full px-3.5 py-2 border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Course Title">
+                                </div>
+                                <div class="grid sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block font-bold uppercase text-slate-600 mb-1">Domain</label>
+                                        <select id="newCourseDomain" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                            <option value="ayush">Medical (AYUSH)</option>
+                                            <option value="engineering">Engineering</option>
+                                            <option value="management">Management</option>
+                                            <option value="law">Law</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold uppercase text-slate-600 mb-1">NEP Credits</label>
+                                        <input type="number" id="newCourseCredits" required min="1" max="10" value="4" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold uppercase text-slate-600 mb-1">Cutoff Deadline</label>
+                                        <input type="date" id="newCourseDeadline" required value="2026-10-30" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-bold uppercase text-slate-600 mb-1">Curriculum Summary</label>
+                                    <textarea id="newCourseDesc" required rows="2" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg" placeholder="Summary..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="block font-bold uppercase text-slate-600 mb-1">Timed Quiz Questions (Question | Option1,Option2 | CorrectIndex)</label>
+                                    <textarea id="newCourseQuiz" rows="3" class="w-full font-mono text-[11px] px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg" placeholder="Question|OptionA,OptionB|0"></textarea>
+                                </div>
+
+                                <div class="flex space-x-3 pt-2">
+                                    <button type="submit" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg transition">
+                                        Publish to Gateway
+                                    </button>
+                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            },
+
+            saveCourse: function(e) {
+                e.preventDefault();
+                const user = DB.currentUser;
+                const title = document.getElementById('newCourseTitle').value;
+                const domain = document.getElementById('newCourseDomain').value;
+                const nepCredits = parseInt(document.getElementById('newCourseCredits').value);
+                const deadline = document.getElementById('newCourseDeadline').value;
+                const description = document.getElementById('newCourseDesc').value;
+
+                const rawQuiz = document.getElementById('newCourseQuiz').value.split('\n').filter(l => l.trim());
+                const quiz = rawQuiz.map(line => {
+                    const parts = line.split('|');
+                    if (parts.length === 3) {
+                        return {
+                            q: parts[0].trim(),
+                            options: parts[1].split(',').map(o => o.trim()),
+                            answer: parseInt(parts[2].trim())
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                const newCourse = {
+                    id: DB.courses.length + 1,
+                    title,
+                    author: user.name,
+                    domain,
+                    nepCredits,
+                    deadline,
+                    description,
+                    quiz,
+                    certified: true
+                };
+
+                DB.courses.push(newCourse);
+                this.showToast('Course published!', 'success');
+                this.render();
+            },
+
+            deleteCourse: function(id) {
+                DB.courses = DB.courses.filter(c => c.id !== id);
+                this.showToast('Course removed.', 'info');
+                this.render();
+            },
+
+            renderIndustrialistView: function(user) {
+                return `
+                    <div class="space-y-6">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800">${user.company || user.name}</h2>
+                                <p class="text-xs text-slate-500 font-medium">Industry Recruiter & Research Partner Portal</p>
+                            </div>
+                            <div class="flex space-x-3">
+                                <button onclick="App.showPostOpportunityModal('Internship')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                                    <i class="fa-solid fa-plus mr-1"></i> Post Internship
+                                </button>
+                                <button onclick="App.showPostOpportunityModal('Placement')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                                    <i class="fa-solid fa-plus mr-1"></i> Post Placement
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
+                            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center">
+                                <i class="fa-solid fa-users text-blue-600 mr-2"></i> Verified Candidates with APAAR ID
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left text-slate-600">
+                                    <thead class="bg-slate-50/80 text-slate-700 uppercase font-bold text-[10px] border-b border-slate-200">
+                                        <tr>
+                                            <th class="p-3">Candidate</th>
+                                            <th class="p-3">Domain</th>
+                                            <th class="p-3">APAAR ID</th>
+                                            <th class="p-3">AI Score</th>
+                                            <th class="p-3">Verified Skills</th>
+                                            <th class="p-3">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200/80">
+                                        ${DB.users.filter(u => u.role === 'student').map(student => `
+                                            <tr class="hover:bg-slate-50/50">
+                                                <td class="p-3 font-bold text-slate-800">${student.name}</td>
+                                                <td class="p-3 uppercase text-blue-700 font-semibold">${student.domain || 'General'}</td>
+                                                <td class="p-3 font-mono text-emerald-700 font-semibold">${student.apaarId || 'VERIFIED-890'}</td>
+                                                <td class="p-3 font-bold text-slate-800">${student.assessment ? student.assessment.score + '%' : 'N/A'}</td>
+                                                <td class="p-3">
+                                                    <div class="flex flex-wrap gap-1 max-w-xs">
+                                                        ${(student.skills || []).slice(0, 3).map(s => `<span class="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">${s}</span>`).join('')}
+                                                    </div>
+                                                </td>
+                                                <td class="p-3">
+                                                    <button onclick="App.showToast('Interview Request sent to ${student.name}', 'success')" class="bg-slate-900 text-white px-2.5 py-1 rounded text-[11px] font-semibold hover:bg-slate-800">
+                                                        Interview &rarr;
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            showPostOpportunityModal: function(type) {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
+                        <div class="max-w-lg w-full glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
+                            ${this.getCloseButton('App.render()')}
+                            <h3 class="text-lg font-bold text-slate-800 mb-1 pr-6">Post New ${type} Opportunity</h3>
+                            <p class="text-xs text-slate-500 mb-4">Set domain competency mapping.</p>
+
+                            <form onsubmit="App.saveOpportunity(event, '${type}')" class="space-y-3 text-xs">
+                                <div>
+                                    <label class="block font-bold uppercase text-slate-600 mb-1">Position Title</label>
+                                    <input type="text" id="oppTitle" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                </div>
+                                <div class="grid sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block font-bold uppercase text-slate-600 mb-1">Target Domain</label>
+                                        <select id="oppDomain" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                            <option value="ayush">Medical (AYUSH)</option>
+                                            <option value="engineering">Engineering</option>
+                                            <option value="management">Management</option>
+                                            <option value="law">Law</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-bold uppercase text-slate-600 mb-1">${type === 'Internship' ? 'Stipend' : 'CTC Package'}</label>
+                                        <input type="text" id="oppComp" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-bold uppercase text-slate-600 mb-1">Required Skills (Comma Separated)</label>
+                                    <input type="text" id="oppSkills" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
+                                </div>
+                                <div class="flex space-x-3 pt-2">
+                                    <button type="submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg transition">
+                                        Post & Notify Candidates
+                                    </button>
+                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            },
+
+            saveOpportunity: function(e, type) {
+                e.preventDefault();
+                const user = DB.currentUser;
+                const title = document.getElementById('oppTitle').value;
+                const domain = document.getElementById('oppDomain').value;
+                const comp = document.getElementById('oppComp').value;
+                const skills = document.getElementById('oppSkills').value.split(',').map(s => s.trim()).filter(Boolean);
+
+                if (type === 'Internship') {
+                    DB.internships.push({
+                        id: DB.internships.length + 1,
+                        company: user.company || user.name,
+                        title,
+                        domain,
+                        skills,
+                        duration: '6 Months',
+                        stipend: comp,
+                        deadline: '2026-10-31',
+                        postedBy: user.id
+                    });
+                } else {
+                    DB.placements.push({
+                        id: DB.placements.length + 1,
+                        company: user.company || user.name,
+                        title,
+                        domain,
+                        skills,
+                        salary: comp,
+                        location: 'Pan-India',
+                        postedBy: user.id
+                    });
+                }
+
+                this.showToast(`${type} opening successfully published!`, 'success');
+                this.render();
+            },
+
+            applyOpportunity: function(type, title) {
+                this.showToast(`Application with APAAR ID portfolio submitted for "${title}"!`, 'success');
+            },
+
+            showToast: function(message, type = 'info') {
+                const colorMap = {
+                    success: 'bg-emerald-700 text-white border-emerald-800',
+                    error: 'bg-rose-700 text-white border-rose-800',
+                    info: 'bg-slate-900 text-amber-300 border-slate-800'
+                };
+                const toast = document.createElement('div');
+                toast.className = `fixed bottom-6 left-6 ${colorMap[type]} px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold z-50 transition-all duration-300 flex items-center space-x-2`;
+                toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+        };
+
+        // Boot system when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
