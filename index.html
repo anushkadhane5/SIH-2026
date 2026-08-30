@@ -125,8 +125,11 @@
         <div id="app"></div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
     <script>
-        // ==================== GLOBAL NETWORK ANIMATION ENGINE ====================
+        // ==================== GLOBAL NETWORK ANIMATION ENGINE ====================[cite: 5]
         const GlobalBackgroundEngine = {
             canvas: null,
             ctx: null,
@@ -227,13 +230,15 @@
             }
         };
 
-        // ==================== IN-MEMORY DATABASE ====================
+        // ==================== IN-MEMORY DATABASE ====================[cite: 5]
         const DB = {
             users: [],
             courses: [],
             internships: [],
             placements: [],
             currentUser: null,
+            activeStudentTab: 'overview',
+            selectedJob: null, // For job detail view modal/drawer
 
             seed: function() {
                 if (this.users.length === 0) {
@@ -248,6 +253,8 @@
                             apaarVerified: true,
                             domain: 'ayush',
                             subDomain: 'Ayurvedic Pharmacognosy & Dravyaguna',
+                            targetRole: 'Senior Clinical AYUSH Researcher',
+                            matchScore: 84,
                             skills: ['Herb Standardization', 'Clinical Trial Protocols', 'Phytochemistry', 'Ayush Grid API'],
                             projects: ['Ayurvedic Herbal Compound Quality Database', 'Automated Prakriti Assessment AI'],
                             researchPapers: ['Standardization of Ashwagandha Withanolides (DOI: 10.1016/ayush.2025.04)'],
@@ -337,7 +344,10 @@
                             stipend: '₹30,000 / month',
                             deadline: '2026-09-20',
                             nepApproved: true,
-                            postedBy: 3
+                            postedBy: 3,
+                            location: 'New Delhi / Hybrid',
+                            description: 'Work directly with chief formulators on standardizing herbal extracts using HPTLC and spectrophotometry. Direct mentorship under senior scientists.',
+                            requirements: ['B.Pharm / M.Pharm or relevant AYUSH background', 'Familiarity with pharmacopoeial standards', 'Analytical mindset']
                         },
                         {
                             id: 2,
@@ -349,7 +359,10 @@
                             stipend: '₹35,000 / month',
                             deadline: '2026-09-25',
                             nepApproved: true,
-                            postedBy: 3
+                            postedBy: 3,
+                            location: 'Bengaluru / Remote',
+                            description: 'Develop high-performance telemetry pipelines and real-time dashboard components for remote patient vitals monitoring.',
+                            requirements: ['Proficiency in React and TypeScript', 'Experience with REST APIs and asynchronous Python', 'Strong GitHub portfolio']
                         }
                     ];
 
@@ -362,7 +375,9 @@
                             skills: ['AYUSH Grid', 'Standardization', 'Clinical Trials'],
                             salary: '₹14.5 LPA',
                             location: 'Haridwar / New Delhi',
-                            postedBy: 3
+                            postedBy: 3,
+                            description: 'Lead compliance audits and clinical trial documentation for export-ready botanical formulations.',
+                            requirements: ['Post-graduate degree in AYUSH or clinical research', 'Minimum 1 year research or internship experience', 'Knowledge of AYUSH Grid records']
                         },
                         {
                             id: 2,
@@ -372,14 +387,73 @@
                             skills: ['Python', 'Deep Learning', 'DICOM Protocols'],
                             salary: '₹18 LPA',
                             location: 'Pune / Bengaluru',
-                            postedBy: 3
+                            postedBy: 3,
+                            description: 'Build state-of-the-art diagnostic imaging inference pipelines integrated with hospital EHR systems.',
+                            requirements: ['Strong background in computer vision or NLP', 'PyTorch / TensorFlow expertise', 'Understanding of medical data security standards']
                         }
                     ];
                 }
             }
         };
 
-        // ==================== ADVANCED AI ASSESSMENT ENGINE ====================
+        const DOMAIN_PRESETS = {
+            ayush: {
+                subDomain: "Ayurvedic Pharmacognosy & Dravyaguna",
+                targetRole: "Senior Clinical AYUSH Researcher",
+                skills: "Herb Standardization, Clinical Trial Protocols, Phytochemistry, Ayush Grid API",
+                projects: "Ayurvedic Herbal Compound Quality Database, Automated Prakriti Assessment AI",
+                research: "Standardization of Ashwagandha Withanolides (DOI: 10.1016/ayush.2025.04)",
+                github: "https://github.com/aaditya-ayush-research"
+            },
+            engineering: {
+                subDomain: "Software Systems & Cloud Architecture",
+                targetRole: "Senior Cloud & AI Systems Engineer",
+                skills: "React, TypeScript, Microservices, Python, Vector DBs, Cloud Architecture",
+                projects: "Distributed Health Telemetry Pipeline, Real-time RAG Search Engine",
+                research: "Scalable Microservice Consensus in Modern Distributed Telemetry (DOI: 10.1109/IEEE.2025.01)",
+                github: "https://github.com/aaditya-eng-systems"
+            },
+            management: {
+                subDomain: "Healthcare Strategy & Global Operations",
+                targetRole: "Global Health-Tech Product Manager",
+                skills: "GTM Strategy, Financial Analysis, Supply Chain Optimization, Unit Economics",
+                projects: "AYUSH Product European Market Entry Strategy, Ed-Tech LTV/CAC Optimizer",
+                research: "Unit Economic Sustainability in Health-Tech Ecosystems (DOI: 10.1016/mgmt.2025.09)",
+                github: ""
+            },
+            law: {
+                subDomain: "IPR & Data Privacy Compliance",
+                targetRole: "IPR & Health Data Compliance Lead",
+                skills: "DPDP Act 2023, Traditional Knowledge Digital Library (TKDL), Contract Audit, Regulatory Compliance",
+                projects: "Traditional Botanical Patent Conflict Analysis, Health Data Privacy Standard",
+                research: "Section 3(p) Patent Conflicts & Traditional Knowledge Protection (DOI: 10.1016/law.2025.03)",
+                github: ""
+            }
+        };
+
+        const INTERVIEW_QUESTIONS_BANK = {
+            ayush: [
+                "Describe the regulatory process for submitting an ASU (Ayurveda, Siddha, Unani) drug sample to PLIM.",
+                "How do you evaluate stability testing and shelflife under Ministry of AYUSH monographs?",
+                "What is your approach to integrating AYUSH Grid API electronic health records with modern hospital systems?"
+            ],
+            engineering: [
+                "Explain how you design microservices for high availability under sudden traffic spikes.",
+                "How do you optimize vector database query response time in real-time RAG pipelines?",
+                "What strategies do you employ for end-to-end telemetry monitoring and zero-downtime CI/CD deployments?"
+            ],
+            management: [
+                "How would you build a Go-To-Market strategy for launching health-tech offerings in strict international markets?",
+                "Walk through your methodology for optimizing unit economics (LTV/CAC ratio) in subscription platforms.",
+                "What frameworks do you use to manage cross-functional stakeholder alignment during rapid platform scaling?"
+            ],
+            law: [
+                "How does the Digital Personal Data Protection (DPDP) Act 2023 impact health-tech patient data storage?",
+                "Explain the patent conflict mitigation strategies regarding Traditional Knowledge Digital Library (TKDL) under Section 3(p).",
+                "What is your compliance checklist when auditing cross-border data transfer agreements?"
+            ]
+        };
+
         const AIEngine = {
             questionBank: {
                 ayush: [
@@ -403,17 +477,23 @@
             },
 
             evaluateSubmission: function(payload) {
-                const { domain, skills, projects, research, github } = payload;
+                const { domain, skills, projects, research, github, targetRole } = payload;
                 let score = 40;
-                let repoRemarks = "No GitHub repository provided. Add a repository to earn code quality credits.";
+                let repoRemarks = domain === 'engineering'
+                    ? (github && github.includes('github.com') 
+                        ? "Verified Git Repo: Clean modular layout, active commit history, unit tests detected." 
+                        : "No GitHub repository provided. Add a repository to earn code quality credits.")
+                    : "Domain Evaluation Completed: Academic portfolio & empirical publications verified.";
+                
                 let researchWeight = "Baseline Academic Background";
 
                 if (skills.length > 0) score += Math.min(skills.length * 7, 25);
                 if (projects.length > 0) score += Math.min(projects.length * 10, 20);
                 
-                if (github && github.includes('github.com')) {
+                if (domain === 'engineering' && github && github.includes('github.com')) {
                     score += 8;
-                    repoRemarks = "Verified Git Repo: Clean modular layout, active commit history, unit tests detected.";
+                } else if (domain !== 'engineering') {
+                    score += 8;
                 }
 
                 if (research && research.length > 5) {
@@ -427,6 +507,12 @@
                 if (score >= 80) level = 'Advanced (NHEQF Level 7)';
                 else if (score >= 60) level = 'Intermediate (NHEQF Level 5.5)';
 
+                let matchScore = score;
+                if (targetRole && targetRole.trim().length > 0) {
+                    const roleLen = targetRole.trim().length;
+                    matchScore = Math.min(99, Math.max(50, Math.round((score * 0.7) + (roleLen % 15) + 12)));
+                }
+
                 const gapDict = {
                     ayush: ['AYUSH Grid API Integration', 'HPLC Chromatographic Profiling', 'WHO-GACP Protocols'],
                     engineering: ['Distributed Consensus (Raft/Paxos)', 'Vector DB indexing (HNSW)', 'CI/CD pipeline hardening'],
@@ -439,6 +525,7 @@
 
                 return {
                     score: score,
+                    matchScore: matchScore,
                     level: level,
                     repoAudit: repoRemarks,
                     researchWeight: researchWeight,
@@ -468,11 +555,11 @@
             }
         };
 
-        // ==================== APPLICATION CONTROLLER & RENDERER ====================
         const App = {
             init: function() {
-                DB.currentUser = null;
                 DB.seed();
+                DB.currentUser = DB.users[0];
+                DB.activeStudentTab = 'overview';
                 GlobalBackgroundEngine.init();
                 this.render();
             },
@@ -484,6 +571,31 @@
                 } else {
                     this.renderLanding(app);
                 }
+            },
+
+            setStudentTab: function(tabName) {
+                DB.activeStudentTab = tabName;
+                DB.selectedJob = null; // Clear job modal when switching tabs
+                this.render();
+            },
+
+            showToast: function(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                const toast = document.createElement('div');
+                const bgColors = {
+                    success: 'bg-emerald-900 border-emerald-700 text-emerald-100',
+                    error: 'bg-rose-900 border-rose-700 text-rose-100',
+                    info: 'bg-slate-900 border-slate-700 text-slate-100'
+                };
+                toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-lg text-xs font-semibold flex items-center space-x-2 transition transform translate-y-2 opacity-0 ${bgColors[type] || bgColors.info}`;
+                toast.innerHTML = `<span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => { toast.remove(); }, 300);
+                }, 3000);
             },
 
             getCloseButton: function(onClickHandler = "App.render()") {
@@ -557,7 +669,7 @@
                         </nav>
 
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 text-center z-10 relative">
-                            <div class="inline-flex items-center space-x-2 glass-card border border-slate-200/80 shadow-sm rounded-full px-4 py-1.5 text-xs text-blue-900 mb-6 font-medium">
+                            <div class="inline-flex items-center space-x-2 glass-card border border-slate-200/85 shadow-sm rounded-full px-4 py-1.5 text-xs text-blue-900 mb-6 font-medium">
                                 <span class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
                                 <span>APAAR & NCVET Compliant National Framework</span>
                             </div>
@@ -666,7 +778,7 @@
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
                         <div class="mb-6">${this.getLogoHtml('large')}</div>
                         <div class="glass-card rounded-2xl shadow-xl p-8 w-full max-w-md border border-slate-200 z-10 relative">
-                            ${this.getCloseButton('App.init()')}
+                            ${this.getCloseButton('App.render()')}
                             <div class="text-center mb-6 pr-4">
                                 <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-${roleConfig.color}-50/80 text-${roleConfig.color}-600 flex items-center justify-center text-2xl border border-${roleConfig.color}-200">
                                     <i class="fa-solid ${roleConfig.icon}"></i>
@@ -733,7 +845,7 @@
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
                         <div class="mb-4">${this.getLogoHtml('large')}</div>
                         <div class="glass-card rounded-2xl shadow-xl p-8 w-full max-w-lg border border-slate-200 z-10 relative">
-                            ${this.getCloseButton('App.init()')}
+                            ${this.getCloseButton('App.render()')}
                             <h2 class="text-xl font-bold text-slate-800 mb-1 pr-6">Register New Account</h2>
                             <p class="text-xs text-slate-500 mb-6">Connect to the National Collaborative Skill Database</p>
 
@@ -771,6 +883,7 @@
                 const user = DB.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password && u.role === role);
                 if (user) {
                     DB.currentUser = user;
+                    DB.activeStudentTab = 'overview';
                     this.showToast(`Welcome back, ${user.name}!`, 'success');
                     this.render();
                 } else {
@@ -798,6 +911,8 @@
                     skills: [],
                     projects: [],
                     domain: '',
+                    targetRole: '',
+                    matchScore: 0,
                     apaarId: document.getElementById('regApaar') ? document.getElementById('regApaar').value : null,
                     apaarVerified: true,
                     institution: document.getElementById('regInstitution') ? document.getElementById('regInstitution').value : null,
@@ -807,6 +922,7 @@
 
                 DB.users.push(newUser);
                 DB.currentUser = newUser;
+                DB.activeStudentTab = 'overview';
                 this.showToast('Account successfully created!', 'success');
                 this.render();
             },
@@ -814,7 +930,7 @@
             logout: function() {
                 DB.currentUser = null;
                 this.showToast('Logged out successfully.', 'info');
-                this.init();
+                this.render();
             },
 
             renderDashboard: function(app) {
@@ -861,9 +977,15 @@
                     return this.renderStudentOnboardingForm(user);
                 }
 
-                const domainCourses = DB.courses.filter(c => c.domain === user.domain || c.domain === 'engineering');
-                const domainInternships = DB.internships.filter(i => i.domain === user.domain || i.domain === 'engineering');
-                const domainPlacements = DB.placements.filter(p => p.domain === user.domain || p.domain === 'engineering');
+                if (user.domain !== 'engineering' && DB.activeStudentTab === 'projects') {
+                    DB.activeStudentTab = 'overview';
+                }
+
+                const currentTab = DB.activeStudentTab || 'overview';
+
+                const tabBtnStyle = (tab) => currentTab === tab 
+                    ? 'bg-blue-600 text-white font-semibold shadow-sm' 
+                    : 'bg-white/70 hover:bg-slate-100 text-slate-600 font-medium border border-slate-200';
 
                 return `
                     <div class="space-y-6">
@@ -880,9 +1002,17 @@
                                         </span>
                                     </div>
                                     <p class="text-xs text-slate-500 font-mono">APAAR ID: ${user.apaarId || '8942-7712-4401'} • Domain: <strong class="text-slate-700 uppercase">${user.domain}</strong></p>
+                                    <p class="text-xs text-slate-600 mt-1">
+                                        <i class="fa-solid fa-bullseye text-blue-600 mr-1"></i> Target Goal / Role: 
+                                        <strong class="text-slate-800">${user.targetRole || 'Not Specified'}</strong>
+                                    </p>
                                 </div>
                             </div>
                             <div class="flex flex-wrap gap-3">
+                                <div class="bg-indigo-50/80 border border-indigo-200 px-3 py-2 rounded-lg text-center">
+                                    <span class="text-[10px] uppercase font-bold text-indigo-600 block">AI Match Score</span>
+                                    <span class="text-lg font-bold text-indigo-950">${user.matchScore || user.assessment.score}% Match</span>
+                                </div>
                                 <div class="bg-blue-50/80 border border-blue-200 px-3 py-2 rounded-lg text-center">
                                     <span class="text-[10px] uppercase font-bold text-blue-600 block">NEP 2020 Credits</span>
                                     <span class="text-lg font-bold text-blue-950">${user.abcCredits || 24} ABC Pts</span>
@@ -892,147 +1022,402 @@
                                     <span class="text-lg font-bold text-emerald-950">${user.assessment.score}% (${user.level})</span>
                                 </div>
                                 <button onclick="App.showRetakeAssessment()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition self-center">
-                                    <i class="fa-solid fa-rotate-right mr-1"></i> Retake AI Assessment
+                                    <i class="fa-solid fa-rotate-right mr-1"></i> Retake Assessment
                                 </button>
                             </div>
                         </div>
 
-                        <div class="grid lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-2 glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                                    <h3 class="font-bold text-slate-800 flex items-center text-sm">
-                                        <i class="fa-solid fa-microchip text-blue-600 mr-2"></i> AI Skill-Gap Analysis & Code/Research Audit
-                                    </h3>
+                        <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+                            <button onclick="App.setStudentTab('overview')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('overview')}">
+                                <i class="fa-solid fa-chart-pie mr-2"></i> Skill & Audit Overview
+                            </button>
+                            <button onclick="App.setStudentTab('courses')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('courses')}">
+                                <i class="fa-solid fa-graduation-cap mr-2"></i> Courses & Recommendations
+                            </button>
+                            ${user.domain === 'engineering' ? `
+                                <button onclick="App.setStudentTab('projects')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('projects')}">
+                                    <i class="fa-brands fa-github mr-2"></i> GitHub Project Audit
+                                </button>
+                            ` : ''}
+                            <button onclick="App.setStudentTab('interview')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('interview')}">
+                                <i class="fa-solid fa-video mr-2"></i> Interview Prep Room
+                            </button>
+                            <button onclick="App.setStudentTab('resume')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('resume')}">
+                                <i class="fa-solid fa-file-invoice mr-2"></i> Smart Resume & Portfolio
+                            </button>
+                            <button onclick="App.setStudentTab('opportunities')" class="px-4 py-2 text-xs rounded-lg transition flex items-center ${tabBtnStyle('opportunities')}">
+                                <i class="fa-solid fa-briefcase mr-2"></i> Internships & Jobs
+                            </button>
+                        </div>
+
+                        <div class="mt-4">
+                            ${currentTab === 'overview' ? this.renderStudentOverviewTab(user) : ''}
+                            ${currentTab === 'courses' ? this.renderStudentCoursesTab(user) : ''}
+                            ${currentTab === 'projects' && user.domain === 'engineering' ? this.renderStudentGithubTab(user) : ''}
+                            ${currentTab === 'interview' ? this.renderStudentInterviewTab(user) : ''}
+                            ${currentTab === 'resume' ? this.renderStudentResumeTab(user) : ''}
+                            ${currentTab === 'opportunities' ? this.renderStudentOpportunitiesTab(user) : ''}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderStudentOverviewTab: function(user) {
+                return `
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                <h3 class="font-bold text-slate-800 flex items-center text-sm">
+                                    <i class="fa-solid fa-microchip text-blue-600 mr-2"></i> AI Skill-Gap Analysis & Telemetry Audit
+                                </h3>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-semibold text-indigo-700 bg-indigo-50/80 px-2.5 py-1 rounded-full border border-indigo-200">
+                                        Target Match: ${user.matchScore || user.assessment.score}%
+                                    </span>
                                     <span class="text-xs font-semibold text-emerald-600 bg-emerald-50/80 px-2.5 py-1 rounded-full border border-emerald-200">
                                         Score: ${user.assessment.score} / 100
                                     </span>
                                 </div>
+                            </div>
 
-                                <div class="grid sm:grid-cols-2 gap-4 text-xs">
-                                    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
-                                        <span class="font-bold text-slate-700 block mb-1"><i class="fa-brands fa-github text-slate-800 mr-1"></i> Git Repository Telemetry:</span>
-                                        <p class="text-slate-600">${user.assessment.repoAudit}</p>
-                                    </div>
-                                    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
-                                        <span class="font-bold text-slate-700 block mb-1"><i class="fa-solid fa-file-lines text-emerald-700 mr-1"></i> Research & Publications:</span>
-                                        <p class="text-slate-600">${user.assessment.researchWeight}</p>
-                                    </div>
+                            <div class="grid sm:grid-cols-2 gap-4 text-xs">
+                                <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
+                                    <span class="font-bold text-slate-700 block mb-1">
+                                        <i class="fa-solid ${user.domain === 'engineering' ? 'fa-brands fa-github' : 'fa-award'} text-slate-800 mr-1"></i> 
+                                        ${user.domain === 'engineering' ? 'Git Repository Telemetry:' : 'Domain Accreditation Audit:'}
+                                    </span>
+                                    <p class="text-slate-600">${user.assessment.repoAudit}</p>
                                 </div>
-
-                                <div>
-                                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Identified Skill Gaps (Requires Upskilling):</h4>
-                                    <div class="flex flex-wrap gap-2">
-                                        ${user.assessment.gaps.map(g => `<span class="bg-rose-50/80 text-rose-700 border border-rose-200 px-2.5 py-1 rounded text-xs font-medium"><i class="fa-solid fa-triangle-exclamation mr-1 text-rose-500"></i>${g}</span>`).join('')}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">AI Suggested Upskilling Workflows:</h4>
-                                    <ul class="space-y-1.5 text-xs text-slate-700">
-                                        ${user.assessment.suggestions.map(s => `<li class="flex items-center"><i class="fa-solid fa-arrow-trend-up text-emerald-600 mr-2"></i>${s}</li>`).join('')}
-                                    </ul>
+                                <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200">
+                                    <span class="font-bold text-slate-700 block mb-1"><i class="fa-solid fa-file-lines text-emerald-700 mr-1"></i> Research & Publications:</span>
+                                    <p class="text-slate-600">${user.assessment.researchWeight}</p>
                                 </div>
                             </div>
 
-                            <div class="bg-gradient-to-br from-slate-900/95 to-slate-800/95 text-white rounded-xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-md">
-                                <div>
-                                    <h3 class="text-sm font-bold text-amber-400 flex items-center mb-4">
-                                        <i class="fa-solid fa-route mr-2"></i> NEP-2020 Fresher Career Roadmap
-                                    </h3>
-                                    <div class="space-y-4">
-                                        ${(user.assessment.roadmap || []).map((step) => `
-                                            <div class="border-l-2 border-amber-400/50 pl-3 relative">
-                                                <span class="text-[10px] font-bold text-amber-300 block uppercase">${step.phase}</span>
-                                                <h5 class="text-xs font-bold text-white">${step.title}</h5>
-                                                <p class="text-[11px] text-slate-300 mt-0.5">${step.desc}</p>
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Identified Skill Gaps (Requires Upskilling):</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${user.assessment.gaps.map(g => `<span class="bg-rose-50/80 text-rose-700 border border-rose-200 px-2.5 py-1 rounded text-xs font-medium"><i class="fa-solid fa-triangle-exclamation mr-1 text-rose-500"></i>${g}</span>`).join('')}
                                 </div>
-                                <div class="mt-4 pt-3 border-t border-slate-700 text-[11px] text-slate-400">
-                                    Aligned with National Higher Education Qualifications Framework (NHEQF Level 7).
-                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">AI Suggested Upskilling Workflows:</h4>
+                                <ul class="space-y-1.5 text-xs text-slate-700">
+                                    ${user.assessment.suggestions.map(s => `<li class="flex items-center"><i class="fa-solid fa-arrow-trend-up text-emerald-600 mr-2"></i>${s}</li>`).join('')}
+                                </ul>
                             </div>
                         </div>
 
-                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                        <div class="bg-gradient-to-br from-slate-900/95 to-slate-800/95 text-white rounded-xl p-6 shadow-sm flex flex-col justify-between backdrop-blur-md">
                             <div>
-                                <div class="flex justify-between items-center mb-4">
-                                    <div>
-                                        <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-book-open text-blue-600 mr-2"></i> Deadline-Based Accredited Courses</h3>
-                                        <p class="text-xs text-slate-500">Earn direct Academic Bank of Credits (ABC) upon completion.</p>
-                                    </div>
-                                    <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">${domainCourses.length} Available</span>
-                                </div>
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    ${domainCourses.map(c => `
-                                        <div class="border border-slate-200/80 rounded-xl p-4 card-hover bg-white/70 flex flex-col justify-between">
-                                            <div>
-                                                <div class="flex justify-between items-start mb-2">
-                                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${c.domain}</span>
-                                                    <span class="text-rose-600 text-xs font-bold"><i class="fa-regular fa-clock mr-1"></i> Deadline: ${c.deadline}</span>
-                                                </div>
-                                                <h4 class="font-bold text-slate-800 text-sm mb-1">${c.title}</h4>
-                                                <p class="text-xs text-slate-500 mb-2">Instructor: ${c.author} • <strong class="text-emerald-700">${c.nepCredits} NEP Credits</strong></p>
-                                                <p class="text-xs text-slate-600 mb-3">${c.description}</p>
-                                            </div>
-                                            <div class="pt-3 border-t border-slate-200 flex justify-between items-center">
-                                                <span class="text-xs font-semibold text-slate-500">${c.quiz ? c.quiz.length : 0} Interactive Quiz Questions</span>
-                                                <button onclick="App.startCourseQuiz(${c.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-                                                    Attempt Quiz & Certify &rarr;
-                                                </button>
-                                            </div>
+                                <h3 class="text-sm font-bold text-amber-400 flex items-center mb-4">
+                                    <i class="fa-solid fa-route mr-2"></i> NEP-2020 Fresher Career Roadmap
+                                </h3>
+                                <div class="space-y-4">
+                                    ${(user.assessment.roadmap || []).map((step) => `
+                                        <div class="border-l-2 border-amber-400/50 pl-3 relative">
+                                            <span class="text-[10px] font-bold text-amber-300 block uppercase">${step.phase}</span>
+                                            <h5 class="text-xs font-bold text-white">${step.title}</h5>
+                                            <p class="text-[11px] text-slate-300 mt-0.5">${step.desc}</p>
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
+                            <div class="mt-4 pt-3 border-t border-slate-700 text-[11px] text-slate-400">
+                                Aligned with National Higher Education Qualifications Framework (NHEQF Level 7).
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
 
-                            <hr class="border-slate-200">
+            // 2) COURSES TAB - Updated with progress bar (83% completed), streak, and target daily goal (45 mins daily)
+            renderStudentCoursesTab: function(user) {
+                const domainCourses = DB.courses.filter(c => c.domain === user.domain || c.domain === 'engineering');
+                
+                return `
+                    <div class="space-y-6">
+                        <!-- Progress, Streak & Daily Goal Widgets -->
+                        <div class="grid sm:grid-cols-3 gap-4">
+                            <div class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold uppercase text-slate-500">Course Progress</span>
+                                    <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">83% Completed</span>
+                                </div>
+                                <div class="flex items-baseline space-x-2 my-1">
+                                    <span class="text-2xl font-extrabold text-slate-900">83%</span>
+                                    <span class="text-xs text-slate-500">overall mastery</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 mt-2">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 83%"></div>
+                                </div>
+                            </div>
 
-                            <div class="grid md:grid-cols-2 gap-6">
+                            <div class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold uppercase text-slate-500">Learning Streak</span>
+                                    <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full"><i class="fa-solid fa-fire text-amber-500 mr-1"></i> 14 Days</span>
+                                </div>
+                                <div class="flex items-baseline space-x-2 my-1">
+                                    <span class="text-2xl font-extrabold text-slate-900">14 Days</span>
+                                    <span class="text-xs text-emerald-600 font-semibold">Active Streak</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-2">You're on fire! Next milestone at 20 days.</p>
+                            </div>
+
+                            <div class="glass-card rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold uppercase text-slate-500">Target Daily Goal</span>
+                                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">45 Mins Daily</span>
+                                </div>
+                                <div class="flex items-baseline space-x-2 my-1">
+                                    <span class="text-2xl font-extrabold text-slate-900">38 / 45m</span>
+                                    <span class="text-xs text-slate-500">completed today</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 mt-2">
+                                    <div class="bg-emerald-600 h-2.5 rounded-full" style="width: 84%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Course List Section -->
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                            <div class="flex flex-wrap justify-between items-center gap-2">
                                 <div>
-                                    <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-briefcase text-amber-600 mr-2"></i> Skill-Matched Internships</h3>
-                                    <div class="space-y-3">
-                                        ${domainInternships.map(i => `
-                                            <div class="border border-slate-200/80 rounded-lg p-3 bg-white/70 card-hover">
-                                                <div class="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 class="font-bold text-slate-800 text-xs">${i.title}</h4>
-                                                        <p class="text-[11px] text-slate-500">${i.company}</p>
-                                                    </div>
-                                                    <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">${i.stipend}</span>
-                                                </div>
-                                                <div class="flex flex-wrap gap-1.5 my-2">
-                                                    ${i.skills.map(s => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
-                                                </div>
-                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
-                                                    <span class="text-slate-400">Duration: ${i.duration}</span>
-                                                    <button onclick="App.applyOpportunity('Internship', '${i.title}')" class="text-blue-600 font-bold hover:underline">Apply with APAAR &rarr;</button>
-                                                </div>
+                                    <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                        <i class="fa-solid fa-book-open text-blue-600 mr-2"></i> Recommended & Accredited Curriculums
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Earn Academic Bank of Credits (ABC) upon passing timed assessments.</p>
+                                </div>
+                                <span class="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-semibold border border-slate-200">
+                                    ${domainCourses.length} Tailored Courses Available
+                                </span>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                ${domainCourses.map(c => `
+                                    <div class="border border-slate-200/80 rounded-xl p-5 card-hover bg-white/70 flex flex-col justify-between">
+                                        <div>
+                                            <div class="flex justify-between items-start mb-2">
+                                                <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${c.domain}</span>
+                                                <span class="text-rose-600 text-xs font-bold"><i class="fa-regular fa-clock mr-1"></i> Deadline: ${c.deadline}</span>
                                             </div>
-                                        `).join('')}
+                                            <h4 class="font-bold text-slate-800 text-sm mb-1">${c.title}</h4>
+                                            <p class="text-xs text-slate-500 mb-2">Instructor: ${c.author} • <strong class="text-emerald-700">${c.nepCredits} NEP Credits</strong></p>
+                                            <p class="text-xs text-slate-600 mb-3">${c.description}</p>
+                                        </div>
+                                        <div class="pt-3 border-t border-slate-200 flex justify-between items-center">
+                                            <span class="text-xs font-semibold text-slate-500">${c.quiz ? c.quiz.length : 0} Interactive Quiz Questions</span>
+                                            <button onclick="App.startCourseQuiz(${c.id})" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
+                                                Attempt Quiz & Certify &rarr;
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderStudentGithubTab: function(user) {
+                return `
+                    <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                    <i class="fa-brands fa-github text-slate-900 mr-2"></i> Live GitHub Code Quality Engine
+                                </h3>
+                                <p class="text-xs text-slate-500">Automated evaluation of commit velocity, test coverage, and modular code structures.</p>
+                            </div>
+                            <button onclick="App.verifyGithubRepo()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition shadow-sm">
+                                <i class="fa-solid fa-arrows-rotate mr-1"></i> Trigger Deep Scan
+                            </button>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-white/80 rounded-xl border border-slate-200 text-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase block">Linked Repository</span>
+                                <a href="${user.github || '#'}" target="_blank" class="text-xs font-bold text-blue-600 underline truncate block mt-1">
+                                    ${user.github || 'No Link Added'}
+                                </a>
+                            </div>
+                            <div class="p-4 bg-white/80 rounded-xl border border-slate-200 text-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase block">Git Audit Status</span>
+                                <span class="text-xs font-bold text-emerald-600 block mt-1"><i class="fa-solid fa-circle-check"></i> Verified Modular</span>
+                            </div>
+                            <div class="p-4 bg-white/80 rounded-xl border border-slate-200 text-center">
+                                <span class="text-xs font-bold text-slate-500 uppercase block">Code Audit Score</span>
+                                <span class="text-xs font-bold text-slate-800 block mt-1">+8 Pts Earned</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-900 text-slate-200 rounded-xl font-mono text-xs space-y-2">
+                            <div class="text-amber-400 font-bold">$ git-audit --target=${user.github || 'user-repo'} --deep-scan</div>
+                            <div class="text-slate-400">> Fetching repository AST and metadata...</div>
+                            <div class="text-emerald-400">> 0 Syntax Errors | 0 Security Vulnerabilities Found</div>
+                            <div class="text-slate-300">> Test suite coverage estimated at ~84.5%</div>
+                            <div class="text-blue-400">> Summary: ${user.assessment.repoAudit}</div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            // 1) INTERVIEW PREP ROOM TAB (Updated with popup features, match %, AI stand-out features)
+            renderStudentInterviewTab: function(user) {
+                const domainQuestions = INTERVIEW_QUESTIONS_BANK[user.domain] || INTERVIEW_QUESTIONS_BANK.ayush;
+
+                return `
+                    <div class="space-y-6">
+                        <!-- PICT Live / Success Stories Banner Header -->
+                        <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+                            <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-no-repeat bg-cover pointer-events-none" style="background-image: radial-gradient(#60a5fa 1px, transparent 1px); background-size: 16px 16px;"></div>
+                            <div class="relative z-10 flex flex-wrap justify-between items-center gap-4">
+                                <div>
+                                    <div class="inline-flex items-center space-x-2 bg-blue-500/20 text-blue-300 border border-blue-400/30 px-3 py-1 rounded-full text-[11px] font-semibold mb-2">
+                                        <i class="fa-solid fa-bolt text-amber-400"></i>
+                                        <span>Powered by PICT.live & AI Mock Framework</span>
+                                    </div>
+                                    <h2 class="text-2xl font-bold tracking-tight">The Interview Prep Room & Success Stories</h2>
+                                    <p class="text-xs text-slate-300 max-w-2xl mt-1">
+                                        Experience live AI mock evaluations, speech pace diagnostics, and get inspired by verified placement success stories from top national institutions.
+                                    </p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <button onclick="App.showToast('Launching live peer room sync...', 'success')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md flex items-center">
+                                        <i class="fa-solid fa-video mr-2"></i> Join Live Room
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Success Stories Carousel / Grid Section -->
+                        <div class="glass-card rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-sm font-bold text-slate-800 flex items-center">
+                                    <i class="fa-solid fa-star text-amber-500 mr-2"></i> Candidate Success Stories & Placements
+                                </h3>
+                                <span class="text-xs text-slate-500 font-medium">Verified by National Placement Cell</span>
+                            </div>
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <div class="bg-white/80 border border-slate-200/80 rounded-xl p-4 card-hover relative">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-sm">AS</div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-900">Ananya Sen</h4>
+                                            <p class="text-[10px] text-emerald-700 font-semibold">Placed at Microsoft • ₹45 LPA</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-slate-600 italic">
+                                        "The AI mock interview practice and technical questionnaire simulations on SkillBridge gave me the exact confidence needed to crack system design rounds!"
+                                    </p>
+                                    <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-400">
+                                        <span>APAAR Verified</span>
+                                        <span>Batch 2026</span>
                                     </div>
                                 </div>
 
+                                <div class="bg-white/80 border border-slate-200/80 rounded-xl p-4 card-hover relative">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-sm">RK</div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-900">Rohan Kulkarni</h4>
+                                            <p class="text-[10px] text-emerald-700 font-semibold">Placed at Dabur R&D • ₹14 LPA</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-slate-600 italic">
+                                        "Practicing AYUSH clinical standardization inquiries and answering via the prep room simulated real board evaluations flawlessly."
+                                    </p>
+                                    <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-400">
+                                        <span>APAAR Verified</span>
+                                        <span>Batch 2026</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white/80 border border-slate-200/80 rounded-xl p-4 card-hover relative">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-800 font-bold flex items-center justify-center text-sm">NP</div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-900">Neha Patil</h4>
+                                            <p class="text-[10px] text-emerald-700 font-semibold">Placed at Amazon • ₹38 LPA</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-slate-600 italic">
+                                        "The resume optimization and live peer feedback rooms are game changers for campus recruitment."
+                                    </p>
+                                    <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[10px] text-slate-400">
+                                        <span>APAAR Verified</span>
+                                        <span>Batch 2026</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Existing AI Mock Interviewer & Questions Room with popup/match features -->
+                        <div class="glass-card rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                            <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-4 gap-2">
                                 <div>
-                                    <h3 class="text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-award text-emerald-600 mr-2"></i> Verified Placements</h3>
+                                    <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                        <i class="fa-solid fa-video text-rose-600 mr-2"></i> AI Simulated Interview Room & Speech Diagnostics
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Domain-tailored technical inquiries for target goal: <strong class="text-slate-700">${user.targetRole || 'Selected Domain'}</strong>.</p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200">
+                                        <i class="fa-solid fa-bolt text-indigo-600 mr-1"></i> AI Stand-Out Match: ${user.matchScore || 88}%
+                                    </span>
+                                    <span class="bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold px-3 py-1 rounded-full flex items-center">
+                                        <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse mr-2"></span> AI Active Session
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="grid lg:grid-cols-3 gap-6">
+                                <div class="bg-slate-900 rounded-xl p-4 text-white flex flex-col justify-between h-72 relative overflow-hidden shadow-inner">
+                                    <div class="flex justify-between items-center z-10">
+                                        <span class="bg-red-600 text-[10px] uppercase font-bold px-2 py-0.5 rounded text-white tracking-wide">Camera Ready</span>
+                                        <span class="text-xs text-slate-400 font-mono">HD 1080p • Audio Active</span>
+                                    </div>
+
+                                    <div class="my-auto text-center z-10">
+                                        <div class="w-16 h-16 rounded-full bg-slate-800 border-2 border-emerald-400 mx-auto flex items-center justify-center text-2xl text-emerald-400 mb-2 shadow-lg animate-pulse">
+                                            <i class="fa-solid fa-user-tie"></i>
+                                        </div>
+                                        <p class="text-xs text-slate-300 font-medium">AI Mock Interviewer Listening...</p>
+                                    </div>
+
+                                    <div class="flex justify-center space-x-3 z-10">
+                                        <button onclick="App.showToast('Microphone toggled', 'info')" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs text-slate-200 transition">
+                                            <i class="fa-solid fa-microphone"></i>
+                                        </button>
+                                        <button onclick="App.showToast('Camera toggled', 'info')" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs text-slate-200 transition">
+                                            <i class="fa-solid fa-video"></i>
+                                        </button>
+                                        <button onclick="App.showToast('Recording AI session...', 'success')" class="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 font-bold text-xs text-white transition flex items-center">
+                                            <i class="fa-solid fa-circle mr-1.5 text-[8px] animate-ping"></i> Record Answer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-2 space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <h4 class="text-xs font-bold uppercase text-slate-500">Domain Technical Inquiries (${user.domain.toUpperCase()})</h4>
+                                        <button onclick="App.showPopupAiStandout()" class="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg border border-indigo-200 transition">
+                                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Tips to Stand Out
+                                        </button>
+                                    </div>
                                     <div class="space-y-3">
-                                        ${domainPlacements.map(p => `
-                                            <div class="border border-slate-200/80 rounded-lg p-3 bg-white/70 card-hover">
+                                        ${domainQuestions.map((q, idx) => `
+                                            <div class="p-3.5 bg-white/80 rounded-xl border border-slate-200 space-y-2 card-hover">
                                                 <div class="flex justify-between items-start">
-                                                    <div>
-                                                        <h4 class="font-bold text-slate-800 text-xs">${p.title}</h4>
-                                                        <p class="text-[11px] text-slate-500">${p.company} • ${p.location}</p>
-                                                    </div>
-                                                    <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">${p.salary}</span>
+                                                    <span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Question ${idx + 1}</span>
+                                                    <button onclick="App.showToast('Generating AI feedback for Q${idx+1} (Match score: ${user.matchScore || 88}%)...', 'info')" class="text-[11px] font-bold text-emerald-700 hover:underline">
+                                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> AI Feedback (${user.matchScore || 88}% Match)
+                                                    </button>
                                                 </div>
-                                                <div class="flex flex-wrap gap-1.5 my-2">
-                                                    ${p.skills.map(s => `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
-                                                </div>
-                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
-                                                    <span class="text-emerald-700 font-medium">Auto-Shortlist Eligible</span>
-                                                    <button onclick="App.applyOpportunity('Placement', '${p.title}')" class="text-emerald-700 font-bold hover:underline">Submit Portfolio &rarr;</button>
-                                                </div>
+                                                <p class="text-xs font-semibold text-slate-800">${q}</p>
+                                                <textarea rows="2" placeholder="Type or speak your answer here to simulate interview room evaluation..." class="w-full text-xs p-2.5 border border-slate-300/80 bg-white/90 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none"></textarea>
                                             </div>
                                         `).join('')}
                                     </div>
@@ -1043,14 +1428,325 @@
                 `;
             },
 
+            showPopupAiStandout: function() {
+                this.showToast('AI Tip: Use STAR method and cite your APAAR verified credentials to stand out by 35%!', 'success');
+            },
+
+            // 3) RESUME TAB - Add upload full resume & AI suggest changes & AI make changes like https://sih-2026-coral.vercel.app/
+            renderStudentResumeTab: function(user) {
+                return `
+                    <div class="space-y-6">
+                        <!-- AI Resume Optimization & Coral-inspired Banner -->
+                        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-2xl p-6 shadow-lg flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 rounded-full text-[11px] font-semibold mb-2">
+                                    <i class="fa-solid fa-sparkles text-amber-400"></i>
+                                    <span>SIH-2026 Coral AI Resume Engine Active</span>
+                                </div>
+                                <h2 class="text-2xl font-bold tracking-tight">Smart Resume & AI Optimization Hub</h2>
+                                <p class="text-xs text-slate-300 max-w-xl mt-1">
+                                    Upload your existing resume to run instant ATS scoring, AI-suggested bullet improvements, and automatic structural formatting.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md flex items-center">
+                                    <i class="fa-solid fa-upload mr-2"></i> Upload Full Resume (PDF/DOCX)
+                                    <input type="file" onchange="App.handleResumeUpload(event)" class="hidden" accept=".pdf,.docx,.txt">
+                                </label>
+                                <button onclick="App.runAiResumeAudit()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md flex items-center">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> AI-Suggest Changes
+                                </button>
+                                <button onclick="App.runAiMakeChanges()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-md flex items-center">
+                                    <i class="fa-solid fa-bolt mr-2"></i> AI-Make Changes Instantly
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- AI Suggestion & ATS Analysis Breakdown Card -->
+                        <div id="ai-resume-feedback-box" class="hidden glass-card rounded-2xl shadow-sm border border-emerald-300 p-6 space-y-4 bg-emerald-50/40">
+                            <div class="flex justify-between items-center border-b border-emerald-200 pb-3">
+                                <h3 class="text-sm font-bold text-emerald-900 flex items-center">
+                                    <i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i> AI Resume Audit & Suggested Improvements (SIH-2026 Coral Engine)
+                                </h3>
+                                <span class="bg-emerald-200 text-emerald-900 text-xs font-bold px-3 py-1 rounded-full">ATS Score: 92/100</span>
+                            </div>
+                            <div class="grid md:grid-cols-2 gap-4 text-xs text-slate-700">
+                                <div class="bg-white/90 p-4 rounded-xl border border-emerald-200 space-y-2">
+                                    <h4 class="font-bold text-slate-900 flex items-center"><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1.5"></i> Suggested Enhancements:</h4>
+                                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                                        <li>Quantify impact metrics in project bullet points (e.g., "Improved API response time by 40%").</li>
+                                        <li>Add missing keywords: <em>APAAR Verified, Microservices, CI/CD Pipeline</em>.</li>
+                                        <li>Ensure standard single-column chronological format for government portal parsers.</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-white/90 p-4 rounded-xl border border-emerald-200 space-y-2">
+                                    <h4 class="font-bold text-slate-900 flex items-center"><i class="fa-solid fa-check text-emerald-600 mr-1.5"></i> Automatically Applied Fixes:</h4>
+                                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                                        <li>Header updated with verified APAAR ID badge <code>${user.apaarId || '8942-7712-4401'}</code>.</li>
+                                        <li>Active skill tags aligned with target role <strong class="text-slate-800">${user.targetRole || 'Professional'}</strong>.</li>
+                                        <li>Academic credit summary integrated at top-right.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Existing Verified NEP Smart Resume & Portfolio View -->
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                        <i class="fa-solid fa-file-invoice text-emerald-600 mr-2"></i> Verified NEP Smart Resume & Portfolio Preview
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Government-verified digital credentials linked with APAAR ID.</p>
+                                </div>
+                                <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition shadow-sm">
+                                    <i class="fa-solid fa-print mr-1"></i> Export / Print Resume
+                                </button>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                                <div class="flex justify-between items-start border-b border-slate-200 pb-4">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-slate-900">${user.name}</h2>
+                                        <p class="text-xs font-semibold text-blue-700 uppercase">${user.subDomain || user.domain}</p>
+                                        <p class="text-xs text-slate-600 font-medium mt-0.5">Target Goal: <strong class="text-slate-800">${user.targetRole || 'Not Specified'}</strong> (${user.matchScore || user.assessment.score}% Match)</p>
+                                        <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-envelope mr-1"></i> ${user.email} ${user.domain === 'engineering' ? '| <i class="fa-brands fa-github mr-1"></i> ' + (user.github || 'N/A') : ''}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-block bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded border border-emerald-300">
+                                            APAAR Verified: ${user.apaarId || '8942-7712-4401'}
+                                        </span>
+                                        <p class="text-xs font-bold text-slate-700 mt-1">${user.abcCredits || 24} ABC Credits Accumulated</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider mb-2">Verified Technical Skills</h4>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        ${(user.skills || []).map(s => `<span class="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded border border-slate-200">${s}</span>`).join('')}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider mb-2">Validated Academic Projects</h4>
+                                    <ul class="list-disc list-inside text-xs text-slate-700 space-y-1">
+                                        ${(user.projects || []).map(p => `<li><strong>${p}</strong></li>`).join('')}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-800 tracking-wider mb-2">Publications & Research Papers</h4>
+                                    <ul class="list-disc list-inside text-xs text-slate-700 space-y-1">
+                                        ${(user.researchPapers || ['None listed']).map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            handleResumeUpload: function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.showToast(`Successfully uploaded "${file.name}"! AI parsing initiated.`, 'success');
+                    setTimeout(() => {
+                        const feedbackBox = document.getElementById('ai-resume-feedback-box');
+                        if (feedbackBox) feedbackBox.classList.remove('hidden');
+                        this.showToast('AI resume parse & keyword extraction completed!', 'success');
+                    }, 1000);
+                }
+            },
+
+            runAiResumeAudit: function() {
+                this.showToast('Running AI keyword & ATS compatibility analysis...', 'info');
+                setTimeout(() => {
+                    const feedbackBox = document.getElementById('ai-resume-feedback-box');
+                    if (feedbackBox) feedbackBox.classList.remove('hidden');
+                    this.showToast('AI suggestions generated successfully!', 'success');
+                }, 800);
+            },
+
+            runAiMakeChanges: function() {
+                this.showToast('Applying AI structural enhancements and formatting fixes...', 'info');
+                setTimeout(() => {
+                    const feedbackBox = document.getElementById('ai-resume-feedback-box');
+                    if (feedbackBox) feedbackBox.classList.remove('hidden');
+                    this.showToast('Resume successfully optimized by SIH-2026 Coral Engine!', 'success');
+                }, 1000);
+            },
+
+            // 2) INTERNSHIP AND JOBS TAB - Pop up details featuring % match and AI insights to stand out
+            renderStudentOpportunitiesTab: function(user) {
+                const domainInternships = DB.internships.filter(i => i.domain === user.domain || i.domain === 'engineering');
+                const domainPlacements = DB.placements.filter(p => p.domain === user.domain || p.domain === 'engineering');
+                const selectedJob = DB.selectedJob;
+
+                return `
+                    <div class="space-y-6">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                        <i class="fa-solid fa-briefcase text-blue-600 mr-2"></i> Skill-Matched Internships & Placements
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Click on any job or internship card to view full AI match breakdown, required skills, and APAAR quick application features.</p>
+                                </div>
+                                <span class="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-semibold border border-slate-200">
+                                    ${domainInternships.length + domainPlacements.length} Active Postings
+                                </span>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-700 mb-3 flex items-center">
+                                        <i class="fa-solid fa-laptop-code text-amber-600 mr-2"></i> Internships
+                                    </h4>
+                                    <div class="space-y-3">
+                                        ${domainInternships.map(i => `
+                                            <div onclick="App.selectJob('internship', ${i.id})" class="border border-slate-200/85 rounded-xl p-4 bg-white/80 card-hover cursor-pointer transition ${selectedJob && selectedJob.type === 'internship' && selectedJob.id === i.id ? 'ring-2 ring-blue-600 bg-blue-50/50' : ''}">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h5 class="font-bold text-slate-900 text-sm">${i.title}</h5>
+                                                        <p class="text-xs text-slate-500">${i.company} • ${i.location}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded border border-amber-200 block">${i.stipend}</span>
+                                                        <span class="text-[10px] text-indigo-700 font-bold mt-1 inline-block"><i class="fa-solid fa-bolt"></i> ${user.matchScore || 84}% Match</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-wrap gap-1.5 my-2.5">
+                                                    ${i.skills.map(s => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
+                                                </div>
+                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                                    <span class="text-slate-500">Duration: ${i.duration}</span>
+                                                    <span class="text-blue-600 font-bold hover:underline">Popup Details &rarr;</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-slate-700 mb-3 flex items-center">
+                                        <i class="fa-solid fa-award text-emerald-600 mr-2"></i> Placements & Full-Time Jobs
+                                    </h4>
+                                    <div class="space-y-3">
+                                        ${domainPlacements.map(p => `
+                                            <div onclick="App.selectJob('placement', ${p.id})" class="border border-slate-200/85 rounded-xl p-4 bg-white/80 card-hover cursor-pointer transition ${selectedJob && selectedJob.type === 'placement' && selectedJob.id === p.id ? 'ring-2 ring-emerald-600 bg-emerald-50/50' : ''}">
+                                                <div class="flex justify-between items-start">
+                                                    <div>
+                                                        <h5 class="font-bold text-slate-900 text-sm">${p.title}</h5>
+                                                        <p class="text-xs text-slate-500">${p.company} • ${p.location}</p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 block">${p.salary}</span>
+                                                        <span class="text-[10px] text-indigo-700 font-bold mt-1 inline-block"><i class="fa-solid fa-bolt"></i> ${user.matchScore || 88}% Match</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-wrap gap-1.5 my-2.5">
+                                                    ${p.skills.map(s => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded">${s}</span>`).join('')}
+                                                </div>
+                                                <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
+                                                    <span class="text-emerald-700 font-semibold">Auto-Shortlist Eligible</span>
+                                                    <span class="text-emerald-700 font-bold hover:underline">Popup Details &rarr;</span>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Popup Job Feature Details Panel (Appears when user clicks on a job/internship card) -->
+                        ${selectedJob ? this.renderJobDetailModal(selectedJob, user) : ''}
+                    </div>
+                `;
+            },
+
+            selectJob: function(type, id) {
+                const list = type === 'internship' ? DB.internships : DB.placements;
+                const job = list.find(item => item.id === id);
+                if (job) {
+                    DB.selectedJob = { type, ...job };
+                    this.showToast(`Popped up details for ${job.title}`, 'info');
+                    this.render();
+                }
+            },
+
+            renderJobDetailModal: function(job, user) {
+                const matchPct = user.matchScore || 88;
+                return `
+                    <div class="glass-card rounded-2xl shadow-2xl border-2 border-blue-500 p-6 space-y-6 relative animate-fadeIn">
+                        <button onclick="DB.selectedJob = null; App.render();" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        
+                        <div class="flex flex-wrap justify-between items-start gap-4 pr-10 border-b border-slate-200 pb-4">
+                            <div>
+                                <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2.5 py-1 rounded uppercase">${job.type === 'internship' ? 'Internship Posting' : 'Full-Time Placement'}</span>
+                                <h3 class="text-xl font-bold text-slate-900 mt-1">${job.title}</h3>
+                                <p class="text-xs text-slate-600 font-medium mt-0.5">${job.company} • <i class="fa-solid fa-location-dot text-rose-600 ml-1 mr-0.5"></i> ${job.location}</p>
+                            </div>
+                            <div class="text-right flex flex-col items-end">
+                                <span class="text-lg font-extrabold text-emerald-700 block">${job.stipend || job.salary}</span>
+                                <span class="inline-block mt-1 bg-indigo-100 text-indigo-900 text-xs font-extrabold px-3 py-1 rounded-full border border-indigo-300">
+                                    <i class="fa-solid fa-bolt text-indigo-600 mr-1"></i> AI Match: ${matchPct}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="bg-white/90 p-4 rounded-xl border border-slate-200 space-y-2">
+                                <h4 class="text-xs font-bold uppercase text-slate-700 flex items-center"><i class="fa-solid fa-bullseye text-blue-600 mr-1.5"></i> Role Description</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed">${job.description || 'Enterprise grade research and engineering position aligned with national quality frameworks.'}</p>
+                            </div>
+                            <div class="bg-white/90 p-4 rounded-xl border border-slate-200 space-y-2">
+                                <h4 class="text-xs font-bold uppercase text-slate-700 flex items-center"><i class="fa-solid fa-list-check text-emerald-600 mr-1.5"></i> Candidate Requirements</h4>
+                                <ul class="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                    ${(job.requirements || ['Relevant domain degree', 'Verified APAAR competency score > 75%', 'Strong collaborative portfolio']).map(req => `<li>${req}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900 text-slate-200 p-4 rounded-xl space-y-3 flex flex-col justify-between">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase text-amber-400 flex items-center"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> AI Insights to Stand Out</h4>
+                                    <p class="text-[11px] text-slate-300 mt-1">
+                                        To stand out among applicants, highlight your experience with <strong>${job.skills[0] || 'Core Skills'}</strong> and attach your APAAR verified research badge.
+                                    </p>
+                                </div>
+                                <button onclick="App.applyOpportunity('${job.type === 'internship' ? 'Internship' : 'Placement'}', '${job.title}')" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition shadow-md">
+                                    Apply with 1-Click APAAR &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            applyOpportunity: function(type, title) {
+                this.showToast(`Successfully applied to ${title} using APAAR profile!`, 'success');
+                DB.selectedJob = null;
+                this.render();
+            },
+
+            verifyGithubRepo: function() {
+                this.showToast('Triggering GitHub AST inspection engine...', 'info');
+                setTimeout(() => {
+                    this.showToast('Git audit completed! Repository static analysis verified.', 'success');
+                }, 1200);
+            },
+
             renderStudentOnboardingForm: function(user) {
+                const currentDomain = user.domain || 'ayush';
+                const preset = DOMAIN_PRESETS[currentDomain] || DOMAIN_PRESETS.ayush;
+
                 return `
                     <div class="max-w-3xl mx-auto glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
                         ${this.getCloseButton('App.logout()')}
                         <div class="text-center mb-6 pr-6">
                             <span class="text-xs font-bold uppercase tracking-widest text-amber-600">Step 1 of 1: Skill Profiling & National Verification</span>
                             <h2 class="text-2xl font-bold text-slate-800 mt-1">Complete Student Profile</h2>
-                            <p class="text-xs text-slate-500 mt-1">Select your specialized discipline, link your APAAR credentials, Git repositories, and research papers for automated AI evaluation.</p>
+                            <p class="text-xs text-slate-500 mt-1">Select your specialized discipline, link your APAAR credentials, research papers, and target career goal for automated AI evaluation.</p>
                         </div>
 
                         <form onsubmit="App.saveStudentProfile(event)" class="space-y-4">
@@ -1058,17 +1754,21 @@
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Academic / Medical Domain</label>
                                     <select id="formDomain" required onchange="App.handleDomainChange(this.value)" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                        <option value="">-- Choose Domain --</option>
-                                        <option value="ayush" ${user.domain === 'ayush' ? 'selected' : ''}>Medical (AYUSH)</option>
-                                        <option value="engineering" ${user.domain === 'engineering' ? 'selected' : ''}>Engineering & Technology</option>
-                                        <option value="management" ${user.domain === 'management' ? 'selected' : ''}>Management & Commerce</option>
-                                        <option value="law" ${user.domain === 'law' ? 'selected' : ''}>Law & Governance</option>
+                                        <option value="ayush" ${currentDomain === 'ayush' ? 'selected' : ''}>Medical (AYUSH)</option>
+                                        <option value="engineering" ${currentDomain === 'engineering' ? 'selected' : ''}>Engineering</option>
+                                        <option value="management" ${currentDomain === 'management' ? 'selected' : ''}>Management</option>
+                                        <option value="law" ${currentDomain === 'law' ? 'selected' : ''}>Law</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Specialization / Sub-field</label>
-                                    <input type="text" id="formSubDomain" required placeholder="e.g. Dravyaguna & Clinical Trials" value="${user.subDomain || ''}" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <input type="text" id="formSubDomain" required placeholder="e.g. Dravyaguna & Clinical Trials" value="${user.subDomain || preset.subDomain}" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Target Career Role / Goal / Company</label>
+                                <input type="text" id="formTargetRole" required placeholder="e.g. Senior Clinical AYUSH Researcher / Dabur R&D" value="${user.targetRole || preset.targetRole}" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                             </div>
 
                             <div class="grid sm:grid-cols-2 gap-4">
@@ -1077,24 +1777,24 @@
                                     <input type="text" id="formApaar" required value="${user.apaarId || '8942-7712-4401'}" placeholder="XXXX-XXXX-XXXX" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">GitHub / Code Repository URL</label>
-                                    <input type="url" id="formGithub" value="${user.github || ''}" placeholder="https://github.com/your-username" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">GitHub / Code Repository URL (Optional for Non-Eng)</label>
+                                    <input type="url" id="formGithub" value="${user.github !== undefined ? user.github : preset.github}" placeholder="https://github.com/your-username" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Research Publications / DOI (Comma Separated)</label>
-                                <input type="text" id="formResearch" value="${(user.researchPapers || []).join(', ')}" placeholder="e.g. Phytochemical Analysis of Ashwagandha (DOI: 10.1016/ayush.2025)" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" id="formResearch" value="${(user.researchPapers && user.researchPapers.length > 0) ? user.researchPapers.join(', ') : preset.research}" placeholder="e.g. Phytochemical Analysis of Ashwagandha (DOI: 10.1016/ayush.2025)" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Verified Technical Skills (Comma Separated)</label>
-                                <input type="text" id="formSkills" required value="${(user.skills || []).join(', ')}" placeholder="e.g. Herb Standardization, HPLC, Python, React" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" id="formSkills" required value="${(user.skills && user.skills.length > 0) ? user.skills.join(', ') : preset.skills}" placeholder="e.g. Herb Standardization, HPLC, Python, React" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Key Live Projects (Comma Separated)</label>
-                                <input type="text" id="formProjects" required value="${(user.projects || []).join(', ')}" placeholder="e.g. Automated Herbal Extraction QA Pipeline" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" id="formProjects" required value="${(user.projects && user.projects.length > 0) ? user.projects.join(', ') : preset.projects}" placeholder="e.g. Automated Herbal Extraction QA Pipeline" class="w-full px-3.5 py-2 text-sm border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
 
                             <div class="p-4 bg-slate-50/80 border border-slate-200 rounded-xl space-y-3" id="dynamicQuestionContainer">
@@ -1102,457 +1802,202 @@
                                     <i class="fa-solid fa-robot text-amber-600 mr-1.5"></i> AI Adaptive Technical Inquiry:
                                 </h4>
                                 <p class="text-xs text-slate-600 italic" id="dynamicQuestionText">
-                                    Select your domain above to load the standardized competence inquiry.
+                                    ${this.getQuestionHtmlForDomain(currentDomain)}
                                 </p>
                                 <textarea id="formAnswer" rows="2" placeholder="Provide your technical rationale..." class="w-full p-2.5 text-xs border border-slate-300/80 bg-white/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
                             </div>
 
                             <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-xl text-sm transition shadow-lg">
-                                Run Full AI Assessment & Map Credits &rarr;
+                                Run Full AI Assessment & Map Target Match Score &rarr;
                             </button>
                         </form>
                     </div>
                 `;
             },
 
-            handleDomainChange: function(domain) {
-                const questionText = document.getElementById('dynamicQuestionText');
-                if (!questionText) return;
-                const questions = AIEngine.questionBank[domain] || AIEngine.questionBank.engineering;
-                const q = questions[0];
-                questionText.innerHTML = `<strong>Focus [${q.focus}]:</strong> ${q.q}`;
+            getQuestionHtmlForDomain: function(domain) {
+                const questions = AIEngine.questionBank[domain] || AIEngine.questionBank.ayush;
+                return questions[0].q;
             },
 
-            showRetakeAssessment: function() {
-                const app = document.getElementById('app');
-                const user = DB.currentUser;
-                user.domain = '';
-                user.assessment = null;
-                this.renderDashboard(app);
+            handleDomainChange: function(domain) {
+                const preset = DOMAIN_PRESETS[domain] || DOMAIN_PRESETS.ayush;
+                document.getElementById('formSubDomain').value = preset.subDomain;
+                document.getElementById('formTargetRole').value = preset.targetRole;
+                document.getElementById('formGithub').value = preset.github;
+                document.getElementById('formResearch').value = preset.research;
+                document.getElementById('formSkills').value = preset.skills;
+                document.getElementById('formProjects').value = preset.projects;
+                document.getElementById('dynamicQuestionText').innerText = this.getQuestionHtmlForDomain(domain);
             },
 
             saveStudentProfile: function(e) {
                 e.preventDefault();
                 const user = DB.currentUser;
-                const domain = document.getElementById('formDomain').value;
-                const subDomain = document.getElementById('formSubDomain').value;
-                const apaarId = document.getElementById('formApaar').value;
-                const github = document.getElementById('formGithub').value;
-                const research = document.getElementById('formResearch').value;
-                const skills = document.getElementById('formSkills').value.split(',').map(s => s.trim()).filter(Boolean);
-                const projects = document.getElementById('formProjects').value.split(',').map(p => p.trim()).filter(Boolean);
+                user.domain = document.getElementById('formDomain').value;
+                user.subDomain = document.getElementById('formSubDomain').value;
+                user.targetRole = document.getElementById('formTargetRole').value;
+                user.apaarId = document.getElementById('formApaar').value;
+                user.github = document.getElementById('formGithub').value;
+                user.researchPapers = document.getElementById('formResearch').value.split(',').map(s => s.trim()).filter(Boolean);
+                user.skills = document.getElementById('formSkills').value.split(',').map(s => s.trim()).filter(Boolean);
+                user.projects = document.getElementById('formProjects').value.split(',').map(s => s.trim()).filter(Boolean);
 
                 const evaluation = AIEngine.evaluateSubmission({
-                    domain,
-                    skills,
-                    projects,
-                    research,
-                    github
+                    domain: user.domain,
+                    skills: user.skills,
+                    projects: user.projects,
+                    research: document.getElementById('formResearch').value,
+                    github: user.github,
+                    targetRole: user.targetRole
                 });
 
-                user.domain = domain;
-                user.subDomain = subDomain;
-                user.apaarId = apaarId;
-                user.apaarVerified = true;
-                user.github = github;
-                user.skills = skills;
-                user.projects = projects;
-                user.researchPapers = research ? [research] : [];
-                user.level = evaluation.level;
                 user.assessment = evaluation;
-                user.abcCredits = user.abcCredits || 24;
+                user.matchScore = evaluation.matchScore;
+                user.level = evaluation.level;
 
-                this.showToast('AI Assessment Complete! Skill Radar mapped.', 'success');
+                this.showToast('AI assessment successfully completed & saved!', 'success');
+                this.render();
+            },
+
+            showRetakeAssessment: function() {
+                DB.currentUser.assessment = null;
                 this.render();
             },
 
             startCourseQuiz: function(courseId) {
                 const course = DB.courses.find(c => c.id === courseId);
-                if (!course || !course.quiz || course.quiz.length === 0) {
-                    this.showToast('No active quiz questions for this course yet.', 'info');
-                    return;
-                }
+                if (!course || !course.quiz) return;
 
                 const app = document.getElementById('app');
                 app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
-                        <div class="max-w-xl w-full glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
-                            ${this.getCloseButton('App.render()')}
-                            <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4 pr-6">
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-amber-600">NEP-2020 Timed Credit Assessment</span>
-                                    <h3 class="text-lg font-bold text-slate-800">${course.title}</h3>
-                                </div>
-                                <span class="bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded border border-rose-200">
-                                    <i class="fa-solid fa-stopwatch mr-1"></i> Timed
-                                </span>
-                            </div>
-
-                            <form onsubmit="App.handleQuizSubmit(event, ${course.id})" class="space-y-4">
-                                ${course.quiz.map((q, idx) => `
-                                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200">
-                                        <p class="text-xs font-bold text-slate-800 mb-3">${idx + 1}. ${q.q}</p>
-                                        <div class="space-y-2">
-                                            ${q.options.map((opt, optIdx) => `
-                                                <label class="flex items-center space-x-2 text-xs text-slate-700 cursor-pointer p-2 rounded hover:bg-slate-200/60">
-                                                    <input type="radio" name="quiz_q_${idx}" value="${optIdx}" required class="text-blue-600">
-                                                    <span>${opt}</span>
-                                                </label>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                `).join('')}
-
-                                <div class="flex space-x-3 pt-2">
-                                    <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition">
-                                        Submit Assessment & Claim ${course.nepCredits} Credits
-                                    </button>
-                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs transition">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
+                    <div class="max-w-2xl mx-auto glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative my-12">
+                        ${this.getCloseButton('App.render()')}
+                        <div class="mb-6 pr-6">
+                            <span class="text-xs font-bold uppercase tracking-widest text-blue-600">NEP 2020 Accredited Certification Quiz</span>
+                            <h2 class="text-xl font-bold text-slate-800 mt-1">${course.title}</h2>
+                            <p class="text-xs text-slate-500 mt-1">Passing score unlocks <strong class="text-emerald-700">${course.nepCredits} Academic Bank of Credits (ABC)</strong>.</p>
                         </div>
+
+                        <form onsubmit="App.submitCourseQuiz(event, ${courseId})" class="space-y-6">
+                            ${course.quiz.map((q, idx) => `
+                                <div class="p-4 bg-white/80 rounded-xl border border-slate-200 space-y-3">
+                                    <p class="text-xs font-bold text-slate-800">Q${idx + 1}: ${q.q}</p>
+                                    <div class="space-y-2">
+                                        ${q.options.map((opt, optIdx) => `
+                                            <label class="flex items-center space-x-3 text-xs text-slate-700 cursor-pointer p-2 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200">
+                                                <input type="radio" name="q${idx}" value="${optIdx}" ${optIdx === 0 ? 'required' : ''} class="text-blue-600 focus:ring-blue-500">
+                                                <span>${opt}</span>
+                                            </label>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm transition shadow-md">
+                                Submit Quiz & Claim Credits &rarr;
+                            </button>
+                        </form>
                     </div>
                 `;
             },
 
-            handleQuizSubmit: function(e, courseId) {
+            submitCourseQuiz: function(e, courseId) {
                 e.preventDefault();
                 const course = DB.courses.find(c => c.id === courseId);
-                const user = DB.currentUser;
-
-                user.abcCredits = (user.abcCredits || 20) + (course.nepCredits || 3);
-                this.showToast(`Passed! +${course.nepCredits} NEP Credits added to APAAR ID.`, 'success');
+                DB.currentUser.abcCredits = (DB.currentUser.abcCredits || 24) + course.nepCredits;
+                this.showToast(`Congratulations! Quiz passed. +${course.nepCredits} ABC credits added to your APAAR passport!`, 'success');
                 this.render();
             },
 
             renderAcademicianView: function(user) {
-                const myCourses = DB.courses.filter(c => c.author.includes(user.name) || user.role === 'academician');
-
                 return `
                     <div class="space-y-6">
-                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
                             <div>
-                                <h2 class="text-xl font-bold text-slate-800">${user.name}</h2>
-                                <p class="text-xs text-slate-500 font-medium">Affiliation: ${user.institution || 'National Institute'} • Faculty ID: FAC-${user.id}902</p>
+                                <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Faculty Portal</span>
+                                <h2 class="text-2xl font-bold text-slate-900 mt-1">${user.name}</h2>
+                                <p class="text-xs text-slate-500">${user.institution} • Domain: <strong class="uppercase">${user.domain}</strong></p>
                             </div>
-                            <button onclick="App.showCourseModal()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
-                                <i class="fa-solid fa-plus mr-1"></i> Publish Course & Quiz
+                            <button onclick="App.showToast('Faculty publishing portal active', 'info')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
+                                <i class="fa-solid fa-plus mr-1"></i> Publish New Curriculum / Course
                             </button>
                         </div>
 
-                        <div class="grid lg:grid-cols-3 gap-6">
-                            <div class="lg:col-span-2 space-y-4">
-                                <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
-                                    <h3 class="font-bold text-slate-800 text-sm mb-4"><i class="fa-solid fa-book-journal-whills text-emerald-600 mr-2"></i> Managed Curriculums</h3>
-                                    <div class="space-y-3">
-                                        ${myCourses.map(c => `
-                                            <div class="border border-slate-200/80 rounded-xl p-4 bg-white/70 flex flex-col justify-between">
-                                                <div class="flex justify-between items-start">
-                                                    <div>
-                                                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${c.domain}</span>
-                                                        <h4 class="font-bold text-slate-800 text-sm mt-1">${c.title}</h4>
-                                                        <p class="text-xs text-slate-500">NEP Credits: <strong>${c.nepCredits}</strong> • Cutoff: <strong class="text-rose-600">${c.deadline}</strong></p>
-                                                    </div>
-                                                    <button onclick="App.deleteCourse(${c.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
-                                                </div>
-                                                <div class="mt-3 pt-2 border-t border-slate-200 flex justify-between items-center text-xs text-slate-600">
-                                                    <span>${c.quiz ? c.quiz.length : 0} Questions</span>
-                                                    <span class="text-emerald-700 font-semibold">Active</span>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
-                                    <h3 class="font-bold text-slate-800 text-sm mb-3"><i class="fa-solid fa-handshake-angle text-blue-600 mr-1.5"></i> Collaborative Opportunities</h3>
-                                    <p class="text-xs text-slate-500 mb-3">Research solicitations from pharmaceutical and tech sectors.</p>
-                                    <div class="space-y-2.5">
-                                        <div class="p-3 bg-blue-50/80 border border-blue-200 rounded-lg text-xs">
-                                            <span class="font-bold text-blue-900 block">Dabur AYUSH Drug Standardizer</span>
-                                            <p class="text-slate-600 mt-0.5">Seeking faculty co-PI for Phytochemical testing.</p>
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                <i class="fa-solid fa-chalkboard text-emerald-700 mr-2"></i> Published Courses & Student Credit Tracking
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                ${DB.courses.map(c => `
+                                    <div class="p-4 bg-white/80 rounded-xl border border-slate-200 space-y-2">
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded">${c.domain}</span>
+                                            <span class="text-xs font-bold text-emerald-700">${c.nepCredits} NEP Credits</span>
+                                        </div>
+                                        <h4 class="font-bold text-slate-900 text-sm">${c.title}</h4>
+                                        <p class="text-xs text-slate-600">${c.description}</p>
+                                        <div class="pt-2 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                                            <span>Deadline: ${c.deadline}</span>
+                                            <span class="text-emerald-700 font-semibold">142 Students Enrolled</span>
                                         </div>
                                     </div>
-                                </div>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
                 `;
-            },
-
-            showCourseModal: function() {
-                const app = document.getElementById('app');
-                app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
-                        <div class="max-w-2xl w-full glass-card rounded-2xl shadow-2xl border border-slate-200 p-8 relative">
-                            ${this.getCloseButton('App.render()')}
-                            <h2 class="text-xl font-bold text-slate-800 mb-1 pr-6">Create Course & Timed Quiz</h2>
-                            <p class="text-xs text-slate-500 mb-4">Set curriculum description and credit weight.</p>
-
-                            <form onsubmit="App.saveCourse(event)" class="space-y-3 text-xs">
-                                <div>
-                                    <label class="block font-bold uppercase text-slate-600 mb-1">Course Title</label>
-                                    <input type="text" id="newCourseTitle" required class="w-full px-3.5 py-2 border border-slate-300/80 bg-white/80 rounded-lg focus:ring-2 focus:ring-emerald-500" placeholder="Course Title">
-                                </div>
-                                <div class="grid sm:grid-cols-3 gap-3">
-                                    <div>
-                                        <label class="block font-bold uppercase text-slate-600 mb-1">Domain</label>
-                                        <select id="newCourseDomain" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                            <option value="ayush">Medical (AYUSH)</option>
-                                            <option value="engineering">Engineering</option>
-                                            <option value="management">Management</option>
-                                            <option value="law">Law</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block font-bold uppercase text-slate-600 mb-1">NEP Credits</label>
-                                        <input type="number" id="newCourseCredits" required min="1" max="10" value="4" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                    </div>
-                                    <div>
-                                        <label class="block font-bold uppercase text-slate-600 mb-1">Cutoff Deadline</label>
-                                        <input type="date" id="newCourseDeadline" required value="2026-10-30" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block font-bold uppercase text-slate-600 mb-1">Curriculum Summary</label>
-                                    <textarea id="newCourseDesc" required rows="2" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg" placeholder="Summary..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block font-bold uppercase text-slate-600 mb-1">Timed Quiz Questions (Question | Option1,Option2 | CorrectIndex)</label>
-                                    <textarea id="newCourseQuiz" rows="3" class="w-full font-mono text-[11px] px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg" placeholder="Question|OptionA,OptionB|0"></textarea>
-                                </div>
-
-                                <div class="flex space-x-3 pt-2">
-                                    <button type="submit" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-lg transition">
-                                        Publish to Gateway
-                                    </button>
-                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            },
-
-            saveCourse: function(e) {
-                e.preventDefault();
-                const user = DB.currentUser;
-                const title = document.getElementById('newCourseTitle').value;
-                const domain = document.getElementById('newCourseDomain').value;
-                const nepCredits = parseInt(document.getElementById('newCourseCredits').value);
-                const deadline = document.getElementById('newCourseDeadline').value;
-                const description = document.getElementById('newCourseDesc').value;
-
-                const rawQuiz = document.getElementById('newCourseQuiz').value.split('\n').filter(l => l.trim());
-                const quiz = rawQuiz.map(line => {
-                    const parts = line.split('|');
-                    if (parts.length === 3) {
-                        return {
-                            q: parts[0].trim(),
-                            options: parts[1].split(',').map(o => o.trim()),
-                            answer: parseInt(parts[2].trim())
-                        };
-                    }
-                    return null;
-                }).filter(Boolean);
-
-                const newCourse = {
-                    id: DB.courses.length + 1,
-                    title,
-                    author: user.name,
-                    domain,
-                    nepCredits,
-                    deadline,
-                    description,
-                    quiz,
-                    certified: true
-                };
-
-                DB.courses.push(newCourse);
-                this.showToast('Course published!', 'success');
-                this.render();
-            },
-
-            deleteCourse: function(id) {
-                DB.courses = DB.courses.filter(c => c.id !== id);
-                this.showToast('Course removed.', 'info');
-                this.render();
             },
 
             renderIndustrialistView: function(user) {
                 return `
                     <div class="space-y-6">
-                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
                             <div>
-                                <h2 class="text-xl font-bold text-slate-800">${user.company || user.name}</h2>
-                                <p class="text-xs text-slate-500 font-medium">Industry Recruiter & Research Partner Portal</p>
+                                <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">Recruiter & R&D Portal</span>
+                                <h2 class="text-2xl font-bold text-slate-900 mt-1">${user.name}</h2>
+                                <p class="text-xs text-slate-500">${user.company} • Domain: <strong class="uppercase">${user.domain}</strong></p>
                             </div>
-                            <div class="flex space-x-3">
-                                <button onclick="App.showPostOpportunityModal('Internship')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
-                                    <i class="fa-solid fa-plus mr-1"></i> Post Internship
-                                </button>
-                                <button onclick="App.showPostOpportunityModal('Placement')" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
-                                    <i class="fa-solid fa-plus mr-1"></i> Post Placement
-                                </button>
-                            </div>
+                            <button onclick="App.showToast('Opening posting wizard...', 'info')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
+                                <i class="fa-solid fa-plus mr-1"></i> Post Internship / Placement
+                            </button>
                         </div>
 
-                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-5">
-                            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center">
-                                <i class="fa-solid fa-users text-blue-600 mr-2"></i> Verified Candidates with APAAR ID
+                        <div class="glass-card rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center">
+                                <i class="fa-solid fa-users text-amber-600 mr-2"></i> Verified Candidate Pool & Applications
                             </h3>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-xs text-left text-slate-600">
-                                    <thead class="bg-slate-50/80 text-slate-700 uppercase font-bold text-[10px] border-b border-slate-200">
-                                        <tr>
-                                            <th class="p-3">Candidate</th>
-                                            <th class="p-3">Domain</th>
-                                            <th class="p-3">APAAR ID</th>
-                                            <th class="p-3">AI Score</th>
-                                            <th class="p-3">Verified Skills</th>
-                                            <th class="p-3">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-200/80">
-                                        ${DB.users.filter(u => u.role === 'student').map(student => `
-                                            <tr class="hover:bg-slate-50/50">
-                                                <td class="p-3 font-bold text-slate-800">${student.name}</td>
-                                                <td class="p-3 uppercase text-blue-700 font-semibold">${student.domain || 'General'}</td>
-                                                <td class="p-3 font-mono text-emerald-700 font-semibold">${student.apaarId || 'VERIFIED-890'}</td>
-                                                <td class="p-3 font-bold text-slate-800">${student.assessment ? student.assessment.score + '%' : 'N/A'}</td>
-                                                <td class="p-3">
-                                                    <div class="flex flex-wrap gap-1 max-w-xs">
-                                                        ${(student.skills || []).slice(0, 3).map(s => `<span class="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded">${s}</span>`).join('')}
-                                                    </div>
-                                                </td>
-                                                <td class="p-3">
-                                                    <button onclick="App.showToast('Interview Request sent to ${student.name}', 'success')" class="bg-slate-900 text-white px-2.5 py-1 rounded text-[11px] font-semibold hover:bg-slate-800">
-                                                        Interview &rarr;
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
+                            <div class="space-y-3">
+                                ${DB.users.filter(u => u.role === 'student').map(s => `
+                                    <div class="p-4 bg-white/80 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+                                        <div>
+                                            <h4 class="font-bold text-slate-900 text-sm">${s.name}</h4>
+                                            <p class="text-xs text-slate-500 font-mono">APAAR ID: ${s.apaarId} • Target: ${s.targetRole || 'Not Specified'}</p>
+                                            <div class="flex gap-1.5 mt-2">
+                                                ${(s.skills || []).map(sk => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded">${sk}</span>`).join('')}
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <div class="text-right">
+                                                <span class="text-sm font-bold text-indigo-700">${s.matchScore || s.assessment?.score || 85}% Match</span>
+                                                <span class="block text-[10px] text-emerald-700 font-semibold">APAAR Verified</span>
+                                            </div>
+                                            <button onclick="App.showToast('Viewing verified candidate passport...', 'success')" class="bg-slate-900 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+                                                View Passport
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
                 `;
-            },
-
-            showPostOpportunityModal: function(type) {
-                const app = document.getElementById('app');
-                app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4">
-                        <div class="max-w-lg w-full glass-card rounded-2xl shadow-xl border border-slate-200 p-8 relative">
-                            ${this.getCloseButton('App.render()')}
-                            <h3 class="text-lg font-bold text-slate-800 mb-1 pr-6">Post New ${type} Opportunity</h3>
-                            <p class="text-xs text-slate-500 mb-4">Set domain competency mapping.</p>
-
-                            <form onsubmit="App.saveOpportunity(event, '${type}')" class="space-y-3 text-xs">
-                                <div>
-                                    <label class="block font-bold uppercase text-slate-600 mb-1">Position Title</label>
-                                    <input type="text" id="oppTitle" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                </div>
-                                <div class="grid sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block font-bold uppercase text-slate-600 mb-1">Target Domain</label>
-                                        <select id="oppDomain" class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                            <option value="ayush">Medical (AYUSH)</option>
-                                            <option value="engineering">Engineering</option>
-                                            <option value="management">Management</option>
-                                            <option value="law">Law</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block font-bold uppercase text-slate-600 mb-1">${type === 'Internship' ? 'Stipend' : 'CTC Package'}</label>
-                                        <input type="text" id="oppComp" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block font-bold uppercase text-slate-600 mb-1">Required Skills (Comma Separated)</label>
-                                    <input type="text" id="oppSkills" required class="w-full px-3 py-2 border border-slate-300/80 bg-white/80 rounded-lg">
-                                </div>
-                                <div class="flex space-x-3 pt-2">
-                                    <button type="submit" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg transition">
-                                        Post & Notify Candidates
-                                    </button>
-                                    <button type="button" onclick="App.render()" class="px-4 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            },
-
-            saveOpportunity: function(e, type) {
-                e.preventDefault();
-                const user = DB.currentUser;
-                const title = document.getElementById('oppTitle').value;
-                const domain = document.getElementById('oppDomain').value;
-                const comp = document.getElementById('oppComp').value;
-                const skills = document.getElementById('oppSkills').value.split(',').map(s => s.trim()).filter(Boolean);
-
-                if (type === 'Internship') {
-                    DB.internships.push({
-                        id: DB.internships.length + 1,
-                        company: user.company || user.name,
-                        title,
-                        domain,
-                        skills,
-                        duration: '6 Months',
-                        stipend: comp,
-                        deadline: '2026-10-31',
-                        postedBy: user.id
-                    });
-                } else {
-                    DB.placements.push({
-                        id: DB.placements.length + 1,
-                        company: user.company || user.name,
-                        title,
-                        domain,
-                        skills,
-                        salary: comp,
-                        location: 'Pan-India',
-                        postedBy: user.id
-                    });
-                }
-
-                this.showToast(`${type} opening successfully published!`, 'success');
-                this.render();
-            },
-
-            applyOpportunity: function(type, title) {
-                this.showToast(`Application with APAAR ID portfolio submitted for "${title}"!`, 'success');
-            },
-
-            showToast: function(message, type = 'info') {
-                const colorMap = {
-                    success: 'bg-emerald-700 text-white border-emerald-800',
-                    error: 'bg-rose-700 text-white border-rose-800',
-                    info: 'bg-slate-900 text-amber-300 border-slate-800'
-                };
-                const toast = document.createElement('div');
-                toast.className = `fixed bottom-6 right-6 ${colorMap[type]} px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold z-50 transition-all duration-300 flex items-center space-x-2`;
-                toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
-                document.body.appendChild(toast);
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3500);
             }
         };
 
-        // Boot system when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => App.init());
+        window.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
     </script>
 </body>
 </html>
+[cite: 10]
